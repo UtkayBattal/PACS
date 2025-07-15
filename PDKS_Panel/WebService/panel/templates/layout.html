@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDKS - {% block title %}{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='css/main.css') }}"
+      rel="stylesheet"
+    />
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% block additional_styles %}{% endblock %}
+  </head>
+  <body>
+    {% if session.logged_in %}
+    <!-- Oturum açmış kullanıcılar için navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container-fluid">
+        <button
+          class="navbar-toggler sidebar-toggler"
+          type="button"
+          aria-label="Toggle navigation"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+        {% if current_user.is_authenticated and current_user.role_id == 3 %}
+        <a class="navbar-brand" href="{{ url_for('leave_requests.employee_panel') }}">
+          <i class="fas fa-fingerprint me-2"></i>PDİKS
+        </a>
+        {% else %}
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+          <i class="fas fa-fingerprint me-2"></i>PDİKS
+        </a>
+        {% endif %}
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <i class="fas fa-user"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle user-dropdown"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <div class="user-info">
+                  <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">
+                      {{ session.user_name or current_user.name or 'Kullanıcı'
+                      }}
+                    </div>
+                    <div class="user-email">
+                      {{ session.user_email or current_user.email or 'Email' }}
+                    </div>
+                  </div>
+                  <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end user-dropdown-menu"
+                aria-labelledby="navbarDropdown"
+              >
+                <li class="dropdown-header">
+                  <div class="user-info-header">
+                    <div class="user-avatar-large">
+                      <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold">
+                        {{ session.user_name or current_user.name or 'Kullanıcı'
+                        }}
+                      </div>
+                      <small class="text-muted"
+                        >{{ session.user_email or current_user.email or 'Email'
+                        }}</small
+                      >
+                    </div>
+                  </div>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                {% if current_user.role_id != 3 %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-edit me-2"></i>Profil
+                  </a>
+                </li>
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+                {% endif %}
+                <li>
+                  <a
+                    class="dropdown-item text-danger logout-item"
+                    href="{{ url_for('logout') }}"
+                    onclick="return confirmLogout()"
+                  >
+                    <i class="fas fa-sign-out-alt me-2"></i>Çıkış
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-backdrop"></div>
+    <nav class="sidebar" id="sidebarMenu">
+      <div class="sidebar-sticky pt-3">
+        <ul class="nav flex-column">
+          {% if current_user.is_authenticated %}
+            {% if current_user.role_id == 3 %}
+            <!-- Employee (role_id = 3) kullanıcıları için sadece izin talebi sayfası -->
+            <li class="nav-item">
+              <a
+                class="nav-link {% if 'leave_requests.employee' in request.endpoint %}active{% endif %}"
+                href="{{ url_for('leave_requests.employee_panel') }}"
+              >
+                <i class="fas fa-calendar-alt"></i>
+                İzin Taleplerim
+              </a>
+            </li>
+            {% else %}
+            <!-- Admin (role_id = 1) ve Supervisor (role_id = 2) kullanıcıları için tüm menüler -->
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
+                href="{{ url_for('index') }}"
+              >
+                <i class="fas fa-home"></i>
+                Ana Sayfa
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'users' %}active{% endif %}"
+                href="{{ url_for('users') }}"
+              >
+                <i class="fas fa-users"></i>
+                Personeller
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'records' %}active{% endif %}"
+                href="{{ url_for('records') }}"
+              >
+                <i class="fas fa-clipboard-list"></i>
+                Kayıtlar
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'fingerprints' %}active{% endif %}"
+                href="{{ url_for('fingerprints') }}"
+              >
+                <i class="fas fa-fingerprint"></i>
+                Parmak İzi
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'devices' %}active{% endif %}"
+                href="{{ url_for('devices') }}"
+              >
+                <i class="fas fa-microchip"></i>
+                Cihazlar
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'device_users' %}active{% endif %}"
+                href="{{ url_for('device_users') }}"
+              >
+                <i class="fas fa-link"></i>
+                Cihaz-Kullanıcı Atamaları
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.endpoint == 'reports_page' %}active{% endif %}"
+                href="{{ url_for('reports_page') }}"
+              >
+                <i class="fas fa-file-alt"></i>
+                Raporlar
+              </a>
+            </li>
+            
+            <!-- İzin Yönetimi -->
+            {% if current_user.role_id == 1 %}
+            <li class="nav-item">
+              <a
+                class="nav-link {% if 'leave_requests.admin' in request.endpoint %}active{% endif %}"
+                href="{{ url_for('leave_requests.admin_panel') }}"
+              >
+                <i class="fas fa-user-check"></i>
+                İzin Yönetimi
+              </a>
+            </li>
+            {% endif %}
+            
+            <!-- Supervisor'lar da izin talep edebilir -->
+            {% if current_user.role_id == 2 %}
+            <li class="nav-item">
+              <a
+                class="nav-link {% if 'leave_requests.employee' in request.endpoint %}active{% endif %}"
+                href="{{ url_for('leave_requests.employee_panel') }}"
+              >
+                <i class="fas fa-calendar-alt"></i>
+                İzin Taleplerim
+              </a>
+            </li>
+            {% endif %}
+            {% endif %}
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+
+    <main role="main">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="alert-container">
+        {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category }} alert-dismissible fade show modern-alert"
+          role="alert"
+          data-alert-type="{{ category }}"
+        >
+          <div class="alert-content">
+            <div class="alert-message">
+              <i
+                class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"
+              ></i>
+              <span>{{ message|safe }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Kapat"
+            ></button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </main>
+    {% else %}
+    <!-- Oturum açmamış kullanıcılar için basit layout -->
+    <div class="container">
+      <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-6 col-lg-4">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <div class="alert-container">
+            {% for category, message in messages %}
+            <div
+              class="alert alert-{{ category }} alert-dismissible fade show modern-alert mb-4"
+              role="alert"
+              data-alert-type="{{ category }}"
+            >
+              <div class="alert-content">
+                <div class="alert-message">
+                  <i
+                    class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"
+                  ></i>
+                  <span>{{ message|safe }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Kapat"
+                ></button>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% endwith %} {% block auth_content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- jQuery eklendi -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Modern alert sistemini başlat
+        initModernAlerts();
+
+        // Flash mesajlarını SweetAlert2 modallarına dönüştür
+        const currentPage = "{{ request.endpoint }}";
+
+        // Tüm sayfalarda SweetAlert kullan (sadece login sayfası hariç)
+        if (currentPage !== "login") {
+          const alerts = document.querySelectorAll(".alert");
+          if (alerts.length > 0) {
+            // İlk alert'i al ve modalda göster
+            const firstAlert = alerts[0];
+            const category = getAlertCategory(firstAlert.className);
+            const message = getAlertMessage(firstAlert);
+
+            if (message.trim()) {
+              showSweetAlert(category, message);
+              // Orijinal alert'leri gizle
+              alerts.forEach((alert) => (alert.style.display = "none"));
+            }
+          }
+        }
+
+        // Modern alert işlevleri
+        function initModernAlerts() {
+          const alerts = document.querySelectorAll(".modern-alert");
+          alerts.forEach((alert) => {
+            let dismissTime;
+
+            // Alert tipine göre kapanma süresi belirle
+            switch (alert.dataset.alertType) {
+              case "success":
+                dismissTime = 3000; // 3 saniye
+                break;
+              case "info":
+                dismissTime = 4000; // 4 saniye
+                break;
+              case "warning":
+                dismissTime = 5000; // 5 saniye
+                break;
+              case "danger":
+                dismissTime = 6000; // 6 saniye (hata mesajları biraz daha uzun)
+                break;
+              default:
+                dismissTime = 4000; // varsayılan 4 saniye
+            }
+
+            // Otomatik kapanma
+            setTimeout(() => {
+              if (alert.parentNode) {
+                alert.style.animation =
+                  "slideOutToTop 0.5s ease-in-out forwards";
+                setTimeout(() => {
+                  if (alert.parentNode) {
+                    alert.remove();
+                  }
+                }, 500);
+              }
+            }, dismissTime);
+
+            // Progress bar gösterge ekle
+            const progressBar = document.createElement("div");
+            progressBar.className = "alert-progress-bar";
+            progressBar.style.cssText = `
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              height: 3px;
+              background: currentColor;
+              opacity: 0.7;
+              width: 100%;
+              transform-origin: left;
+              animation: progressShrink ${dismissTime}ms linear forwards;
+            `;
+            alert.appendChild(progressBar);
+          });
+        }
+
+        // Alert kategorisini tespit et
+        function getAlertCategory(className) {
+          if (className.includes("alert-success")) return "success";
+          if (className.includes("alert-danger")) return "error";
+          if (className.includes("alert-warning")) return "warning";
+          if (className.includes("alert-info")) return "info";
+          return "info";
+        }
+
+        // Alert mesajını temizle
+        function getAlertMessage(alertElement) {
+          const textContent =
+            alertElement.textContent || alertElement.innerText;
+          // İkon ve kapatma butonunu temizle
+          return textContent.replace(/×/g, "").trim();
+        }
+
+        // SweetAlert2 modal göster
+        function showSweetAlert(type, message) {
+          const config = {
+            text: message,
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: "Tamam",
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            customClass: {
+              popup: "swal-custom-popup",
+              title: "swal-custom-title",
+              content: "swal-custom-content",
+              confirmButton: "swal-custom-button",
+            },
+          };
+
+          switch (type) {
+            case "success":
+              config.title = "Başarılı!";
+              config.icon = "success";
+              config.confirmButtonColor = "#4caf50";
+              break;
+            case "error":
+              config.title = "Hata!";
+              config.icon = "error";
+              config.confirmButtonColor = "#f72585";
+              config.timer = 5000; // Hata mesajları biraz daha uzun gösterilsin
+              break;
+            case "warning":
+              config.title = "Uyarı!";
+              config.icon = "warning";
+              config.confirmButtonColor = "#ff9800";
+              break;
+            case "info":
+              config.title = "Bilgi";
+              config.icon = "info";
+              config.confirmButtonColor = "#00b4d8";
+              config.timer = 8000; // Bilgi mesajları 8 saniye gösterilsin
+              config.timerProgressBar = true;
+              break;
+          }
+
+          Swal.fire(config);
+        }
+
+        // Sidebar işlemleri
+        const sidebarMenu = document.getElementById("sidebarMenu");
+        const backdrop = document.querySelector(".sidebar-backdrop");
+        const sidebarToggler = document.querySelector(".sidebar-toggler");
+
+        function closeSidebar() {
+          if (sidebarMenu && backdrop) {
+            sidebarMenu.classList.remove("show");
+            backdrop.classList.remove("show");
+            document.body.style.overflow = "";
+          }
+        }
+
+        function handleSidebarToggle(e) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          sidebarMenu.classList.toggle("show");
+          backdrop.classList.toggle("show");
+          document.body.style.overflow = sidebarMenu.classList.contains("show")
+            ? "hidden"
+            : "";
+        }
+
+        if (sidebarMenu && backdrop && sidebarToggler) {
+          // Sayfa yüklendiğinde sidebar'ı kapat
+          closeSidebar();
+
+          // Sidebar toggle butonu tıklandığında
+          sidebarToggler.addEventListener("click", handleSidebarToggle);
+
+          // Backdrop'a tıklandığında sidebar'ı kapat
+          backdrop.addEventListener("click", closeSidebar);
+
+          // Menü linklerine tıklandığında sidebar'ı kapat
+          const navLinks = sidebarMenu.querySelectorAll(".nav-link");
+          navLinks.forEach((link) => {
+            link.addEventListener("click", closeSidebar);
+          });
+
+          // Sayfa değişimlerinde sidebar'ı kapat
+          window.addEventListener("popstate", closeSidebar);
+          window.addEventListener("load", closeSidebar);
+
+          // Ekran boyutu değiştiğinde kontrol et
+          window.addEventListener("resize", function () {
+            if (window.innerWidth >= 768) {
+              sidebarMenu.classList.remove("show");
+              backdrop.classList.remove("show");
+              document.body.style.overflow = "";
+            }
+          });
+
+          // Tıklama olaylarını dinle
+          document.addEventListener("click", function (e) {
+            // Eğer tıklanan öğe sidebar veya toggle butonu değilse ve sidebar açıksa kapat
+            if (
+              !sidebarMenu.contains(e.target) &&
+              !sidebarToggler.contains(e.target) &&
+              sidebarMenu.classList.contains("show")
+            ) {
+              closeSidebar();
+            }
+          });
+        }
+      });
+
+      // Logout onaylama fonksiyonu
+      function confirmLogout() {
+        try {
+          // SweetAlert ile onay sor
+          Swal.fire({
+            title: "Çıkış Yapmak İstediğinize Emin misiniz?",
+            text: "Oturumunuz sonlandırılacak.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Evet, Çıkış Yap",
+            cancelButtonText: "İptal",
+            customClass: {
+              popup: "swal-custom-popup",
+              confirmButton: "swal-custom-button",
+              cancelButton: "swal-custom-cancel-button",
+            },
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Çıkış yapılıyor mesajı göster
+              Swal.fire({
+                title: "Çıkış Yapılıyor...",
+                text: "Lütfen bekleyin.",
+                icon: "info",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                timer: 1000,
+                customClass: {
+                  popup: "swal-custom-popup",
+                },
+              });
+
+              // 1 saniye bekle ve logout sayfasına git
+              setTimeout(() => {
+                window.location.href = "{{ url_for('logout') }}";
+              }, 1000);
+            }
+          });
+          return false; // Link'in normal çalışmasını engelle
+        } catch (error) {
+          console.error("Logout onayı hatası:", error);
+          // Hata durumunda direkt logout'a git
+          return true;
+        }
+      }
+
+      // Genel başarı mesajı gösterme fonksiyonu
+      function showSuccessMessage(message) {
+        Swal.fire({
+          title: "Başarılı!",
+          text: message,
+          icon: "success",
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: "Tamam",
+          confirmButtonColor: "#4caf50",
+          customClass: {
+            popup: "swal-custom-popup",
+            confirmButton: "swal-custom-button",
+          },
+        });
+      }
+
+      // Genel hata mesajı gösterme fonksiyonu
+      function showErrorMessage(message) {
+        Swal.fire({
+          title: "Hata!",
+          text: message,
+          icon: "error",
+          timer: 5000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: "Tamam",
+          confirmButtonColor: "#f72585",
+          customClass: {
+            popup: "swal-custom-popup",
+            confirmButton: "swal-custom-button",
+          },
+        });
+      }
+
+      // Genel uyarı mesajı gösterme fonksiyonu
+      function showWarningMessage(message) {
+        Swal.fire({
+          title: "Uyarı!",
+          text: message,
+          icon: "warning",
+          timer: 4000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: "Tamam",
+          confirmButtonColor: "#ff9800",
+          customClass: {
+            popup: "swal-custom-popup",
+            confirmButton: "swal-custom-button",
+          },
+        });
+      }
+
+      // Genel bilgi mesajı gösterme fonksiyonu
+      function showInfoMessage(message) {
+        Swal.fire({
+          title: "Bilgi",
+          text: message,
+          icon: "info",
+          timer: 8000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: "Tamam",
+          confirmButtonColor: "#00b4d8",
+          customClass: {
+            popup: "swal-custom-popup",
+            confirmButton: "swal-custom-button",
+          },
+        });
+      }
+    </script>
+    {% block additional_scripts %}{% endblock %}
+  </body>
+</html>

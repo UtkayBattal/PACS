@@ -1,0 +1,572 @@
+{% extends 'layout.html' %} {% block title %}Yeni Kullanıcı{% endblock %} {%
+block content %}
+<div
+  class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+>
+  <h1 class="h2">Yeni Kullanıcı Ekle</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <a href="{{ url_for('users') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> Kullanıcılara Dön
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-user-plus me-2"></i>Kullanıcı Bilgileri
+        </h5>
+      </div>
+      <div class="card-body">
+        <form
+          method="POST"
+          action="{{ url_for('add_user') }}"
+          class="needs-validation"
+          novalidate
+        >
+          <!-- Kimlik Bilgileri -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="card-title mb-0">Kimlik Bilgileri</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="user_id" class="form-label">Personel ID</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="user_id"
+                    name="user_id"
+                    readonly
+                  />
+                  <small class="form-text text-muted"
+                    >Sistem tarafından otomatik atanacaktır.</small
+                  >
+                </div>
+                <div class="col-md-4">
+                  <label for="name" class="form-label">Ad Soyad *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="name"
+                    name="name"
+                    required
+                  />
+                  <div class="invalid-feedback">Ad Soyad alanı zorunludur.</div>
+                </div>
+                <div class="col-md-4">
+                  <label for="tckn" class="form-label">TC Kimlik No *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tckn"
+                    name="tckn"
+                    maxlength="11"
+                    pattern="[0-9]{11}"
+                    required
+                  />
+                  <div class="invalid-feedback">
+                    Geçerli bir TC Kimlik No girin (11 haneli).
+                  </div>
+                </div>
+              </div>
+              <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                  <label for="card" class="form-label">Kart No</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="card"
+                    name="card"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="phone_number" class="form-label"
+                    >Telefon Numarası</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text">+90</span>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="phone_number"
+                      name="phone_number"
+                      placeholder="5XX XXX XX XX"
+                      pattern="[0-9]{10}"
+                      maxlength="10"
+                    />
+                  </div>
+                  <small class="form-text text-muted"
+                    >10 haneli numara girin, ülke kodu otomatik eklenecek</small
+                  >
+                </div>
+                <div class="col-md-4">
+                  <!-- Boş alan -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kişisel Bilgiler -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="card-title mb-0">Kişisel Bilgiler</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="cinsiyet" class="form-label">Cinsiyet *</label>
+                  <select
+                    class="form-select"
+                    id="cinsiyet"
+                    name="gender"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="Kadın">Kadın</option>
+                    <option value="Erkek">Erkek</option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Cinsiyet seçimi zorunludur.
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label for="uyruk" class="form-label">Uyruk *</label>
+                  <select
+                    class="form-select"
+                    id="uyruk"
+                    name="nationality"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="T.C.">T.C.</option>
+                    <option value="Diğer">Diğer</option>
+                  </select>
+                  <div class="invalid-feedback">Uyruk seçimi zorunludur.</div>
+                </div>
+                <div class="col-md-4">
+                  <label for="egitim_durumu" class="form-label"
+                    >Eğitim Durumu *</label
+                  >
+                  <select
+                    class="form-select"
+                    id="egitim_durumu"
+                    name="education_level"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="İlköğretim">İlköğretim</option>
+                    <option value="Ortaokul">Ortaokul</option>
+                    <option value="Lise">Lise</option>
+                    <option value="Ön Lisans">Ön Lisans</option>
+                    <option value="Lisans">Lisans</option>
+                    <option value="Yüksek Lisans">Yüksek Lisans</option>
+                    <option value="Doktora">Doktora</option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Eğitim durumu seçimi zorunludur.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- İş Bilgileri -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="card-title mb-0">İş Bilgileri</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="meslek" class="form-label">Meslek *</label>
+                  <select
+                    class="form-select"
+                    id="meslek"
+                    name="occupation"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="Mühendis">Mühendis</option>
+                    <option value="Tekniker">Tekniker</option>
+                    <option value="Memur">Memur</option>
+                    <option value="İşçi">İşçi</option>
+                    <option value="Yönetici">Yönetici</option>
+                    <option value="Diğer">Diğer</option>
+                  </select>
+                  <div class="invalid-feedback">Meslek seçimi zorunludur.</div>
+                </div>
+                <div class="col-md-4">
+                  <label for="is_tanimi" class="form-label">İş Tanımı</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="is_tanimi"
+                    name="job_title"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="departman" class="form-label">Departman *</label>
+                  <select
+                    class="form-select"
+                    id="departman"
+                    name="department"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="Hukuk İşleri Müdürlüğü">
+                      Hukuk İşleri Müdürlüğü
+                    </option>
+                    <option value="Yazı İşleri Müdürlüğü">
+                      Yazı İşleri Müdürlüğü
+                    </option>
+                    <option value="Kadın ve Aile Hizmetler Müdürlüğü">
+                      Kadın ve Aile Hizmetler Müdürlüğü
+                    </option>
+                    <option value="Sosyal Destek Hizmetleri Müdürlüğü">
+                      Sosyal Destek Hizmetleri Müdürlüğü
+                    </option>
+                    <option value="Zabıta Müdürlüğü">Zabıta Müdürlüğü</option>
+                    <option value="Emlak İstimlak Müdürlüğü">
+                      Emlak İstimlak Müdürlüğü
+                    </option>
+                    <option value="İnsan Kaynakları ve Eğitim Müdürlüğü">
+                      İnsan Kaynakları ve Eğitim Müdürlüğü
+                    </option>
+                    <option value="Yapı Kontrol Müdürlüğü">
+                      Yapı Kontrol Müdürlüğü
+                    </option>
+                    <option value="Bilgi İşlem Müdürlüğü">
+                      Bilgi İşlem Müdürlüğü
+                    </option>
+                    <option value="İklim Değişikliği ve Sıfır Atık Müdürlüğü">
+                      İklim Değişikliği ve Sıfır Atık Müdürlüğü
+                    </option>
+                    <option value="Makine İkmal Bakım ve Onarım Müdürlüğü">
+                      Makine İkmal Bakım ve Onarım Müdürlüğü
+                    </option>
+                    <option value="Temizlik İşleri Müdürlüğü">
+                      Temizlik İşleri Müdürlüğü
+                    </option>
+                    <option value="Destek Hizmet Müdürlüğü">
+                      Destek Hizmet Müdürlüğü
+                    </option>
+                    <option value="İşletme ve İştirakler Müdürlüğü">
+                      İşletme ve İştirakler Müdürlüğü
+                    </option>
+                    <option value="Mali Hizmetler Müdürlüğü">
+                      Mali Hizmetler Müdürlüğü
+                    </option>
+                    <option value="Strateji Geliştirme Müdürlüğü">
+                      Strateji Geliştirme Müdürlüğü
+                    </option>
+                    <option value="Basın ve Yayın Müdürlüğü">
+                      Basın ve Yayın Müdürlüğü
+                    </option>
+                    <option value="Fen İşleri Müdürlüğü">
+                      Fen İşleri Müdürlüğü
+                    </option>
+                    <option value="Park ve Bahçeler Müdürlüğü">
+                      Park ve Bahçeler Müdürlüğü
+                    </option>
+                    <option value="Ruhsat ve Denetim Müdürlüğü">
+                      Ruhsat ve Denetim Müdürlüğü
+                    </option>
+                    <option value="Halkla İlişkiler Müdürlüğü">
+                      Halkla İlişkiler Müdürlüğü
+                    </option>
+                    <option value="Kırsal Hizmetler Müdürlüğü">
+                      Kırsal Hizmetler Müdürlüğü
+                    </option>
+                    <option value="Muhtarlık İşleri Müdürlüğü">
+                      Muhtarlık İşleri Müdürlüğü
+                    </option>
+                    <option value="İmar ve Şehircilik Müdürlüğü">
+                      İmar ve Şehircilik Müdürlüğü
+                    </option>
+                    <option value="Kültür ve Sosyal İşler Müdürlüğü">
+                      Kültür ve Sosyal İşler Müdürlüğü
+                    </option>
+                    <option value="Sivil Savunma Uzmanlığı">
+                      Sivil Savunma Uzmanlığı
+                    </option>
+                    <option value="Spor İşleri Müdürlüğü">
+                      Spor İşleri Müdürlüğü
+                    </option>
+                    <option value="Veteriner İşleri Müdürlüğü">
+                      Veteriner İşleri Müdürlüğü
+                    </option>
+                    <option value="Teftiş Kurulu Müdürlüğü">
+                      Teftiş Kurulu Müdürlüğü
+                    </option>
+                    <option value="Özel Kalem Müdürlüğü">
+                      Özel Kalem Müdürlüğü
+                    </option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Departman seçimi zorunludur.
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                  <label for="calisma_tipi" class="form-label"
+                    >Çalışma Tipi *</label
+                  >
+                  <select
+                    class="form-select"
+                    id="calisma_tipi"
+                    name="work_type"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="Tam Zamanlı">Tam Zamanlı</option>
+                    <option value="Yarı Zamanlı">Yarı Zamanlı</option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Çalışma tipi seçimi zorunludur.
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label for="calisma_durumu" class="form-label"
+                    >Çalışma Durumu *</label
+                  >
+                  <select
+                    class="form-select"
+                    id="calisma_durumu"
+                    name="employment_status"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="Memur">Memur</option>
+                    <option value="Sözleşmeli">Sözleşmeli</option>
+                    <option value="Kadrolu İşçi">Kadrolu İşçi</option>
+                    <option value="Geçici İşçi">Geçici İşçi</option>
+                    <option value="Şirket Personeli">Şirket Personeli</option>
+                    <option value="Geçici Süreli Personel">
+                      Geçici Süreli Personel
+                    </option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Çalışma durumu seçimi zorunludur.
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label for="group_id" class="form-label">Grup ID</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="group_id"
+                    name="group_id"
+                  />
+                </div>
+              </div>
+
+              <div class="row g-3 mt-3">
+                <div class="col-md-6">
+                  <label for="start_date" class="form-label"
+                    >İşe Başlangıç Tarihi</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="start_date"
+                    name="start_date"
+                  />
+                  <small class="form-text text-muted"
+                    >İsteğe bağlı - işe başlama tarihi</small
+                  >
+                </div>
+                <div class="col-md-6">
+                  <label for="end_date" class="form-label"
+                    >İşten Çıkış Tarihi</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="end_date"
+                    name="end_date"
+                  />
+                  <small class="form-text text-muted"
+                    >İsteğe bağlı - işten ayrılma tarihi</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Yetki ve Şifre -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="card-title mb-0">Yetki ve Şifre</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label for="role_id" class="form-label">Sistem Rolü *</label>
+                  <select
+                    class="form-select"
+                    id="role_id"
+                    name="role_id"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    {% for role in roles %}
+                    <option value="{{ role.role_id }}">{{ role.name }}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="invalid-feedback">
+                    Sistem rolü seçimi zorunludur.
+                  </div>
+                  <small class="form-text text-muted">
+                    Sistem düzeyindeki yetki rolü
+                  </small>
+                </div>
+                <div class="col-md-3">
+                  <label for="privilege" class="form-label"
+                    >Cihaz Yetki Seviyesi *</label
+                  >
+                  <select
+                    class="form-select"
+                    id="privilege"
+                    name="privilege"
+                    required
+                  >
+                    <option value="">Seçiniz...</option>
+                    <option value="0">Kullanıcı</option>
+                    <option value="14">Yönetici</option>
+                    <option value="3">Kayıt</option>
+                  </select>
+                  <div class="invalid-feedback">
+                    Cihaz yetki seviyesi seçimi zorunludur.
+                  </div>
+                  <small class="form-text text-muted">
+                    Parmak izi cihazındaki yetki seviyesi
+                  </small>
+                </div>
+                <div class="col-md-3">
+                  <label for="password" class="form-label">Şifre *</label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="password"
+                      name="password"
+                      required
+                      minlength="4"
+                      maxlength="8"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="togglePassword"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                  <small class="form-text text-muted"
+                    >4-8 karakter uzunluğunda olmalıdır.</small
+                  >
+                </div>
+                <div class="col-md-3">
+                  <label for="password_confirm" class="form-label"
+                    >Şifre Tekrar</label
+                  >
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="password_confirm"
+                      name="password_confirm"
+                      minlength="4"
+                      maxlength="8"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="togglePasswordConfirm"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('users') }}" class="btn btn-secondary me-md-2">
+              <i class="fas fa-times me-1"></i> İptal
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save me-1"></i> Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block additional_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Form validation
+    const forms = document.querySelectorAll(".needs-validation");
+    Array.from(forms).forEach((form) => {
+      form.addEventListener(
+        "submit",
+        (event) => {
+          if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add("was-validated");
+        },
+        false
+      );
+    });
+
+    // Şifre göster/gizle fonksiyonu
+    function togglePassword(inputId, buttonId) {
+      const input = document.getElementById(inputId);
+      const button = document.getElementById(buttonId);
+
+      button.addEventListener("click", function () {
+        const type =
+          input.getAttribute("type") === "password" ? "text" : "password";
+        input.setAttribute("type", type);
+
+        const icon = button.querySelector("i");
+        icon.classList.toggle("fa-eye");
+        icon.classList.toggle("fa-eye-slash");
+      });
+    }
+
+    // Şifre alanları için göster/gizle butonlarını aktifleştir
+    togglePassword("password", "togglePassword");
+    togglePassword("password_confirm", "togglePasswordConfirm");
+
+    // Form gönderilmeden önce şifreleri kontrol et
+    document.querySelector("form").addEventListener("submit", function (e) {
+      const password = document.getElementById("password").value;
+      const passwordConfirm = document.getElementById("password_confirm").value;
+
+      if (password !== passwordConfirm) {
+        e.preventDefault();
+        alert("Şifreler eşleşmiyor!");
+        return false;
+      }
+
+      if (password && (password.length < 4 || password.length > 8)) {
+        e.preventDefault();
+        alert("Şifre 4-8 karakter uzunluğunda olmalıdır!");
+        return false;
+      }
+    });
+  });
+</script>
+{% endblock %}

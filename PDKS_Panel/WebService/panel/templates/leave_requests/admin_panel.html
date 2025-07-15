@@ -1,0 +1,965 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  .swal-custom-popup {
+    border-radius: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  }
+  
+  .swal-custom-button {
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 12px 30px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .swal-custom-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+
+  .swal-custom-title {
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+  }
+
+  /* Responsive düzenlemeler */
+  @media (max-width: 768px) {
+    .swal2-popup {
+      width: 95% !important;
+      margin: 0 !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block title %}İzin Yönetimi{% endblock %} {% block
+content %}
+<div class="container-fluid px-4">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-user-check me-2"></i>İzin Yönetimi
+    </h1>
+    <div class="btn-group">
+      <button type="button" class="btn btn-outline-primary" id="refreshBtn">
+        <i class="fas fa-sync-alt me-1"></i> Yenile
+      </button>
+    </div>
+  </div>
+
+  <!-- İstatistik Kartları -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                Toplam Talep
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ stats.total or 0 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Bekleyen
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ stats.pending or 0 }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div
+            class="text-xs font-weight-bold text-success text-uppercase mb-1"
+          >
+            Onaylanan
+          </div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">
+            {{ stats.approved or 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+            Reddedilen
+          </div>
+          <div class="h5 mb-0 font-weight-bold text-gray-800">
+            {{ stats.rejected or 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtreler -->
+  <div class="card mb-4">
+    <div class="card-header"><i class="fas fa-filter me-1"></i> Filtreler</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <label for="statusFilter" class="form-label">Durum</label>
+          <select class="form-select" id="statusFilter">
+            <option value="">Tümü</option>
+            <option value="bekleniyor">Bekleniyor</option>
+            <option value="onaylandı">Onaylandı</option>
+            <option value="reddedildi">Reddedildi</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="leaveTypeFilter" class="form-label">İzin Türü</label>
+          <select class="form-select" id="leaveTypeFilter">
+            <option value="">Tümü</option>
+            <option value="Yıllık İzin">Yıllık İzin</option>
+            <option value="Hastalık İzni">Hastalık İzni</option>
+            <option value="Mazeret İzni">Mazeret İzni</option>
+            <option value="Doğum İzni">Doğum İzni</option>
+            <option value="Babalık İzni">Babalık İzni</option>
+            <option value="Evlilik İzni">Evlilik İzni</option>
+            <option value="Ölüm İzni">Ölüm İzni</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="dateFromFilter" class="form-label"
+            >Başlangıç Tarihi</label
+          >
+          <input type="date" class="form-control" id="dateFromFilter" />
+        </div>
+        <div class="col-md-2">
+          <label for="dateToFilter" class="form-label">Bitiş Tarihi</label>
+          <input type="date" class="form-control" id="dateToFilter" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <div class="d-grid">
+            <button type="button" class="btn btn-primary" id="applyFiltersBtn">
+              <i class="fas fa-search me-1"></i>Uygula
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-12">
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFiltersBtn">
+            <i class="fas fa-times me-1"></i>Filtreleri Temizle
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- İzin Talepleri Tablosu -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        <i class="fas fa-table me-1"></i>İzin Talepleri
+      </h6>
+    </div>
+    <div class="card-body">
+      {% if requests %}
+      <div class="table-responsive">
+        <table
+          class="table table-bordered"
+          id="dataTable"
+          width="100%"
+          cellspacing="0"
+        >
+          <thead>
+            <tr>
+              <th>Personel</th>
+              <th>İzin Türü</th>
+              <th>Talep Tarihi</th>
+              <th>Başlangıç</th>
+              <th>Bitiş</th>
+              <th>Gün</th>
+              <th>Sebep</th>
+              <th>Durum</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in requests %}
+            <tr
+              data-status="{{ req.status }}"
+              data-leave-type="{{ req.leave_type }}"
+              data-start-date="{{ req.start_date.strftime('%Y-%m-%d') }}"
+            >
+              <td>
+                <strong>{{ req.user.name }}</strong><br />
+                <small class="text-muted">{{ req.user.email }}</small>
+              </td>
+              <td>{{ req.leave_type }}</td>
+              <td>{{ req.request_date.strftime('%d.%m.%Y %H:%M') }}</td>
+              <td>{{ req.start_date.strftime('%d.%m.%Y') }}</td>
+              <td>{{ req.end_date.strftime('%d.%m.%Y') }}</td>
+              <td>{{ req.days_count or req.calculate_days() }} gün</td>
+              <td>
+                <span
+                  class="text-truncate"
+                  style="max-width: 150px"
+                  title="{{ req.reason }}"
+                >
+                  {{ req.reason[:30] }}{% if req.reason|length > 30 %}...{%
+                  endif %}
+                </span>
+              </td>
+              <td>
+                {% if req.status == 'bekleniyor' %}
+                <span class="badge bg-warning text-dark">
+                  <i class="fas fa-clock me-1"></i>Bekleniyor
+                </span>
+                {% elif req.status == 'onaylandı' %}
+                <span class="badge bg-success">
+                  <i class="fas fa-check me-1"></i>Onaylandı
+                </span>
+                {% elif req.status == 'reddedildi' %}
+                <span class="badge bg-danger">
+                  <i class="fas fa-times me-1"></i>Reddedildi
+                </span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    onclick="showDetails({{ req.id }})"
+                    title="Detay"
+                  >
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  {% if req.status == 'bekleniyor' %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success"
+                    onclick="approveRequest({{ req.id }})"
+                    title="Onayla"
+                  >
+                    <i class="fas fa-check"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="rejectRequest({{ req.id }})"
+                    title="Reddet"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+        <h5 class="text-gray-500">Henüz hiç izin talebi bulunmamaktadır.</h5>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+{% endblock %} {% block additional_scripts %}
+<script>
+  let dataTable;
+
+  $(document).ready(function () {
+    // DataTable yapılandırması
+    dataTable = $("#dataTable").DataTable({
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Turkish.json",
+      },
+      order: [[2, "desc"]],
+      pageLength: 25,
+      columnDefs: [{ orderable: false, targets: [8] }],
+    });
+
+    // Filtre olayları
+    $("#statusFilter, #leaveTypeFilter").on("change", applyFilters);
+    $("#dateFromFilter, #dateToFilter").on("change", applyFilters);
+    $("#refreshBtn").on("click", function () {
+      window.location.reload();
+    });
+  });
+
+  function applyFilters() {
+    const statusFilter = $("#statusFilter").val();
+    const leaveTypeFilter = $("#leaveTypeFilter").val();
+    const dateFromFilter = $("#dateFromFilter").val();
+    const dateToFilter = $("#dateToFilter").val();
+
+    dataTable.rows().every(function () {
+      const row = this.node();
+      const status = $(row).data("status");
+      const leaveType = $(row).data("leave-type");
+      const startDate = $(row).data("start-date");
+
+      let show = true;
+
+      if (statusFilter && status !== statusFilter) show = false;
+      if (leaveTypeFilter && leaveType !== leaveTypeFilter) show = false;
+      if (dateFromFilter && startDate < dateFromFilter) show = false;
+      if (dateToFilter && startDate > dateToFilter) show = false;
+
+      if (show) {
+        $(row).show();
+      } else {
+        $(row).hide();
+      }
+    });
+
+    dataTable.draw();
+  }
+
+  function showDetails(requestId) {
+    // Yükleniyor modal'ı göster
+    Swal.fire({
+      title: 'Detaylar Yükleniyor...',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+          <p class="mb-2">İzin talebi detayları getiriliyor...</p>
+          <small class="text-muted">Lütfen bekleyiniz.</small>
+        </div>
+      `,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      customClass: {
+        popup: 'swal-custom-popup'
+      }
+    });
+
+    $.get(`/leave-requests/admin/details/${requestId}`)
+      .done(function (data) {
+        // Başarıyla veri geldiğinde güzel bir modal göster
+        showDetailModal(data);
+      })
+      .fail(function () {
+        Swal.fire({
+          title: 'Hata Oluştu!',
+          html: `
+            <div class="text-center">
+              <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+              <p class="mb-2">Detaylar yüklenirken bir hata oluştu.</p>
+              <small class="text-muted">Lütfen tekrar deneyiniz.</small>
+            </div>
+          `,
+          icon: 'error',
+          confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+          confirmButtonColor: '#dc3545',
+          customClass: {
+            popup: 'swal-custom-popup',
+            confirmButton: 'swal-custom-button'
+          }
+        });
+      });
+  }
+
+  function showDetailModal(data) {
+    // Detay verisini parse et (eğer JSON string ise)
+    let requestData;
+    try {
+      requestData = typeof data === 'string' ? JSON.parse(data) : data;
+    } catch (e) {
+      // HTML response ise doğrudan göster
+      Swal.fire({
+        title: 'İzin Talebi Detayı',
+        html: data,
+        width: '800px',
+        confirmButtonText: '<i class="fas fa-times me-1"></i> Kapat',
+        confirmButtonColor: '#6c757d',
+        customClass: {
+          popup: 'swal-custom-popup',
+          confirmButton: 'swal-custom-button'
+        }
+      });
+      return;
+    }
+
+    // Eğer JSON data ise güzel bir format oluştur
+    const statusColors = {
+      'bekleniyor': { bg: 'warning', text: 'dark', icon: 'clock' },
+      'onaylandı': { bg: 'success', text: 'white', icon: 'check' },
+      'reddedildi': { bg: 'danger', text: 'white', icon: 'times' }
+    };
+    
+    const statusColor = statusColors[requestData.status] || statusColors['bekleniyor'];
+    
+    Swal.fire({
+      title: '<i class="fas fa-file-alt me-2"></i>İzin Talebi Detayı',
+      html: `
+        <div style="padding: 10px;">
+          <!-- Başlık Bilgi Kartı -->
+          <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+              <span style="background: #4e73df; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                Talep ID: #${requestData.id}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <div style="background: #4e73df; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                <i class="fas fa-user" style="font-size: 1.2rem; color: white;"></i>
+              </div>
+              <div style="text-align: left;">
+                <h4 style="margin: 0; font-weight: 600; color: #5a5c69;">${requestData.user_name || 'Bilinmiyor'}</h4>
+                <p style="margin: 5px 0 0 0; color: #858796; font-size: 0.9rem;">
+                  <i class="fas fa-envelope me-1"></i>${requestData.user_email || 'E-posta belirtilmemiş'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- İzin Bilgileri Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            
+            <!-- İzin Türü Kartı -->
+            <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 15px; text-align: center;">
+              <i class="fas fa-tag" style="font-size: 1.5rem; margin-bottom: 8px; color: #4e73df;"></i>
+              <h6 style="margin: 0; font-weight: 600; color: #5a5c69;">İzin Türü</h6>
+              <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #858796;">
+                ${requestData.leave_type || 'Bilinmiyor'}
+              </p>
+            </div>
+
+            <!-- Gün Sayısı Kartı -->
+            <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 15px; text-align: center;">
+              <i class="fas fa-hourglass-half" style="font-size: 1.5rem; margin-bottom: 8px; color: #36b9cc;"></i>
+              <h6 style="margin: 0; font-weight: 600; color: #5a5c69;">Gün Sayısı</h6>
+              <p style="margin: 5px 0 0 0; font-size: 1.1rem; font-weight: 700; color: #36b9cc;">
+                ${requestData.days_count || 'Bilinmiyor'} gün
+              </p>
+            </div>
+
+            <!-- Durum Kartı -->
+            <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 15px; text-align: center;">
+              <i class="fas fa-${statusColor.icon}" style="font-size: 1.5rem; margin-bottom: 8px; color: ${
+                requestData.status === 'bekleniyor' ? '#f6c23e' : 
+                requestData.status === 'onaylandı' ? '#1cc88a' : '#e74a3b'
+              };"></i>
+              <h6 style="margin: 0; font-weight: 600; color: #5a5c69;">Durum</h6>
+              <span style="display: inline-block; margin-top: 5px; padding: 4px 12px; border-radius: 15px; font-size: 0.8rem; font-weight: 600; color: white; background: ${
+                requestData.status === 'bekleniyor' ? '#f6c23e' : 
+                requestData.status === 'onaylandı' ? '#1cc88a' : '#e74a3b'
+              };">
+                ${requestData.status === 'bekleniyor' ? 'Bekleniyor' : 
+                  requestData.status === 'onaylandı' ? 'Onaylandı' : 'Reddedildi'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Tarih Bilgileri -->
+          <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h6 style="margin: 0 0 15px 0; display: flex; align-items: center; color: #5a5c69; font-weight: 600;">
+              <i class="fas fa-calendar-alt me-2" style="color: #4e73df;"></i>Tarih Bilgileri
+            </h6>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+              <div style="text-align: center; background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 12px;">
+                <i class="fas fa-play" style="font-size: 1rem; margin-bottom: 5px; color: #1cc88a;"></i>
+                <p style="margin: 0; font-size: 0.75rem; color: #858796;">Başlangıç</p>
+                <p style="margin: 0; font-weight: 600; font-size: 0.9rem; color: #5a5c69;">${requestData.start_date || 'Bilinmiyor'}</p>
+              </div>
+              <div style="text-align: center; background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 12px;">
+                <i class="fas fa-stop" style="font-size: 1rem; margin-bottom: 5px; color: #e74a3b;"></i>
+                <p style="margin: 0; font-size: 0.75rem; color: #858796;">Bitiş</p>
+                <p style="margin: 0; font-weight: 600; font-size: 0.9rem; color: #5a5c69;">${requestData.end_date || 'Bilinmiyor'}</p>
+              </div>
+              <div style="text-align: center; background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 12px;">
+                <i class="fas fa-clock" style="font-size: 1rem; margin-bottom: 5px; color: #36b9cc;"></i>
+                <p style="margin: 0; font-size: 0.75rem; color: #858796;">Talep</p>
+                <p style="margin: 0; font-weight: 600; font-size: 0.85rem; color: #5a5c69;">${requestData.request_date || 'Bilinmiyor'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- İzin Sebebi -->
+          <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <h6 style="margin: 0 0 10px 0; display: flex; align-items: center; color: #5a5c69; font-weight: 600;">
+              <i class="fas fa-clipboard me-2" style="color: #4e73df;"></i>İzin Sebebi
+            </h6>
+            <div style="background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 15px;">
+              <p style="margin: 0; line-height: 1.6; font-size: 0.95rem; color: #5a5c69;">
+                ${requestData.reason || 'Sebep belirtilmemiş'}
+              </p>
+            </div>
+          </div>
+
+          ${requestData.admin_notes ? `
+            <!-- Admin Notları -->
+            <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+              <h6 style="margin: 0 0 10px 0; display: flex; align-items: center; color: #5a5c69; font-weight: 600;">
+                <i class="fas fa-sticky-note me-2" style="color: #f6c23e;"></i>Admin Notları
+              </h6>
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px;">
+                <p style="margin: 0; line-height: 1.6; font-size: 0.95rem; color: #856404;">
+                  ${requestData.admin_notes}
+                </p>
+              </div>
+            </div>
+          ` : ''}
+
+          ${requestData.approved_by || requestData.approved_date ? `
+            <!-- İşlem Bilgileri -->
+            <div style="background: #f8f9fc; border: 1px solid #e3e6f0; border-radius: 10px; padding: 20px;">
+              <h6 style="margin: 0 0 15px 0; display: flex; align-items: center; color: #5a5c69; font-weight: 600;">
+                <i class="fas fa-user-shield me-2" style="color: #36b9cc;"></i>İşlem Bilgileri
+              </h6>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                ${requestData.approved_by ? `
+                  <div style="text-align: center; background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 15px;">
+                    <i class="fas fa-user-tie" style="font-size: 1.1rem; margin-bottom: 5px; color: #36b9cc;"></i>
+                    <p style="margin: 0; font-size: 0.75rem; color: #858796;">İşlem Yapan</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 0.9rem; color: #5a5c69;">${requestData.approved_by}</p>
+                  </div>
+                ` : ''}
+                ${requestData.approved_date ? `
+                  <div style="text-align: center; background: white; border: 1px solid #e3e6f0; border-radius: 8px; padding: 15px;">
+                    <i class="fas fa-calendar-check" style="font-size: 1.1rem; margin-bottom: 5px; color: #1cc88a;"></i>
+                    <p style="margin: 0; font-size: 0.75rem; color: #858796;">İşlem Tarihi</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 0.9rem; color: #5a5c69;">${requestData.approved_date}</p>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `,
+      width: '900px',
+      showCloseButton: true,
+      confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+      confirmButtonColor: '#4e73df',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button'
+      }
+    });
+  }
+
+  function approveRequest(requestId) {
+    Swal.fire({
+      title: 'İzin Talebini Onayla',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+          <p class="mb-3">Bu izin talebini onaylamak istediğinizden emin misiniz?</p>
+          <div class="form-group text-start">
+            <label for="approve_notes" class="form-label">
+              <i class="fas fa-comment me-1"></i>Admin Notları (İsteğe bağlı)
+            </label>
+            <textarea id="approve_notes" class="form-control" rows="3" 
+                      placeholder="Onay notlarınızı buraya yazabilirsiniz..."></textarea>
+          </div>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-check me-1"></i> Onayla',
+      cancelButtonText: '<i class="fas fa-times me-1"></i> İptal',
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button',
+        cancelButton: 'swal-custom-button'
+      },
+      preConfirm: () => {
+        return document.getElementById('approve_notes').value;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Yükleniyor göster
+        Swal.fire({
+          title: 'İşleniyor...',
+          html: `
+            <div class="text-center">
+              <i class="fas fa-cog fa-spin fa-3x text-primary mb-3"></i>
+              <p class="mb-2">İzin talebi onaylanıyor...</p>
+            </div>
+          `,
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'swal-custom-popup'
+          }
+        });
+
+        $.post(`/leave-requests/admin/approve/${requestId}`, {
+          admin_notes: result.value
+        })
+          .done(function (response) {
+            if (response.success) {
+              Swal.fire({
+                title: 'Başarılı!',
+                html: `
+                  <div class="text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5 class="text-success mb-2">İzin Onaylandı!</h5>
+                    <p class="mb-2">${response.message}</p>
+                    <small class="text-muted">Sayfa yenileniyor...</small>
+                  </div>
+                `,
+                icon: 'success',
+                timer: 3000,
+                timerProgressBar: true,
+                confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+                confirmButtonColor: '#28a745',
+                customClass: {
+                  popup: 'swal-custom-popup',
+                  confirmButton: 'swal-custom-button'
+                }
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              showModal('error', 'Hata', response.message);
+            }
+          })
+          .fail(function () {
+            showModal('error', 'Bağlantı Hatası', 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+          });
+      }
+    });
+  }
+
+  function rejectRequest(requestId) {
+    Swal.fire({
+      title: 'İzin Talebini Reddet',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
+          <p class="mb-3">Bu izin talebini reddetmek istediğinizden emin misiniz?</p>
+          <div class="form-group text-start">
+            <label for="reject_notes" class="form-label">
+              <i class="fas fa-comment me-1"></i>Red Nedeni
+            </label>
+            <textarea id="reject_notes" class="form-control" rows="3" 
+                      placeholder="Reddetme nedeninizi belirtiniz..." required></textarea>
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-times me-1"></i> Reddet',
+      cancelButtonText: '<i class="fas fa-arrow-left me-1"></i> İptal',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button',
+        cancelButton: 'swal-custom-button'
+      },
+      preConfirm: () => {
+        const notes = document.getElementById('reject_notes').value;
+        if (!notes.trim()) {
+          Swal.showValidationMessage('Red nedeni belirtilmelidir');
+          return false;
+        }
+        return notes;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Yükleniyor göster
+        Swal.fire({
+          title: 'İşleniyor...',
+          html: `
+            <div class="text-center">
+              <i class="fas fa-cog fa-spin fa-3x text-danger mb-3"></i>
+              <p class="mb-2">İzin talebi reddediliyor...</p>
+            </div>
+          `,
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'swal-custom-popup'
+          }
+        });
+
+        $.post(`/leave-requests/admin/reject/${requestId}`, {
+          admin_notes: result.value
+        })
+          .done(function (response) {
+            if (response.success) {
+              Swal.fire({
+                title: 'İşlem Tamamlandı',
+                html: `
+                  <div class="text-center">
+                    <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
+                    <h5 class="text-danger mb-2">İzin Reddedildi</h5>
+                    <p class="mb-2">${response.message}</p>
+                    <small class="text-muted">Sayfa yenileniyor...</small>
+                  </div>
+                `,
+                icon: 'success',
+                timer: 3000,
+                timerProgressBar: true,
+                confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+                confirmButtonColor: '#dc3545',
+                customClass: {
+                  popup: 'swal-custom-popup',
+                  confirmButton: 'swal-custom-button'
+                }
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              showModal('error', 'Hata', response.message);
+            }
+          })
+          .fail(function () {
+            showModal('error', 'Bağlantı Hatası', 'İşlem sırasında bir hata oluştu. Lütfen tekrar deneyiniz.');
+          });
+      }
+    });
+  }
+
+
+
+  // SweetAlert2 Modal fonksiyonu
+  function showModal(type, title, message) {
+    let config = {
+      title: title,
+      html: `
+        <div class="text-center">
+          <i class="${getIconForType(type)} fa-3x mb-3"></i>
+          <p class="mb-2">${message}</p>
+        </div>
+      `,
+      icon: getSweetAlertIcon(type),
+      confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button'
+      }
+    };
+
+    // Tip göre özel ayarlar
+    switch (type) {
+      case "error":
+        config.confirmButtonColor = '#dc3545';
+        config.html = `
+          <div class="text-center">
+            <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+            <p class="mb-2">${message}</p>
+            <small class="text-muted">Lütfen tekrar deneyiniz.</small>
+          </div>
+        `;
+        break;
+      case "success":
+        config.confirmButtonColor = '#28a745';
+        config.timer = 3000;
+        config.timerProgressBar = true;
+        config.html = `
+          <div class="text-center">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h5 class="text-success mb-2">${title}</h5>
+            <p class="mb-2">${message}</p>
+          </div>
+        `;
+        break;
+      case "warning":
+        config.confirmButtonColor = '#ffc107';
+        config.html = `
+          <div class="text-center">
+            <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
+            <p class="mb-2">${message}</p>
+            <small class="text-muted">Lütfen dikkat ediniz.</small>
+          </div>
+        `;
+        break;
+      case "info":
+      default:
+        config.confirmButtonColor = '#17a2b8';
+        config.timer = 5000;
+        config.timerProgressBar = true;
+        config.html = `
+          <div class="text-center">
+            <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+            <p class="mb-2">${message}</p>
+          </div>
+        `;
+        break;
+    }
+
+    Swal.fire(config);
+  }
+
+  // Icon helper fonksiyonları
+  function getIconForType(type) {
+    switch (type) {
+      case "error": return "fas fa-exclamation-triangle text-danger";
+      case "success": return "fas fa-check-circle text-success";
+      case "warning": return "fas fa-exclamation-circle text-warning";
+      case "info": 
+      default: return "fas fa-info-circle text-info";
+    }
+  }
+
+  function getSweetAlertIcon(type) {
+    switch (type) {
+      case "error": return "error";
+      case "success": return "success";
+      case "warning": return "warning";
+      case "info": 
+      default: return "info";
+    }
+  }
+
+  // Filtre fonksiyonları
+  function applyFilters() {
+    const status = document.getElementById('statusFilter').value;
+    const leaveType = document.getElementById('leaveTypeFilter').value;
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+      let row = rows[i];
+      let showRow = true;
+
+      // Durum filtresi
+      if (status && showRow) {
+        const statusCell = row.cells[7]; // Durum sütunu
+        const statusText = statusCell.textContent.toLowerCase().trim();
+        
+        if (status === 'bekleniyor' && !statusText.includes('bekleniyor')) {
+          showRow = false;
+        } else if (status === 'onaylandı' && !statusText.includes('onaylandı')) {
+          showRow = false;
+        } else if (status === 'reddedildi' && !statusText.includes('reddedildi')) {
+          showRow = false;
+        }
+      }
+
+      // İzin türü filtresi
+      if (leaveType && showRow) {
+        const leaveTypeCell = row.cells[1]; // İzin türü sütunu
+        const leaveTypeText = leaveTypeCell.textContent.trim();
+        
+        if (leaveTypeText !== leaveType) {
+          showRow = false;
+        }
+      }
+
+      // Tarih filtreleri
+      if ((dateFrom || dateTo) && showRow) {
+        const startDateCell = row.cells[3]; // Başlangıç tarihi sütunu
+        const startDateText = startDateCell.textContent.trim();
+        
+        // Tarih formatını dönüştür (dd.mm.yyyy -> yyyy-mm-dd)
+        const dateParts = startDateText.split('.');
+        if (dateParts.length === 3) {
+          const startDate = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}-${dateParts[0].padStart(2, '0')}`;
+          
+          if (dateFrom && startDate < dateFrom) {
+            showRow = false;
+          }
+          if (dateTo && startDate > dateTo) {
+            showRow = false;
+          }
+        }
+      }
+
+      // Satırı göster/gizle
+      row.style.display = showRow ? '' : 'none';
+    }
+
+    // Filtrelenmiş sonuç sayısını göster
+    showFilterResults();
+  }
+
+  function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('leaveTypeFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    
+    // Tüm satırları göster
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+      rows[i].style.display = '';
+    }
+
+    showModal('info', 'Filtreler Temizlendi', 'Tüm izin talepleri görüntüleniyor.');
+  }
+
+  function showFilterResults() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    let visibleCount = 0;
+    
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].style.display !== 'none') {
+        visibleCount++;
+      }
+    }
+
+    if (visibleCount === 0) {
+      showModal('warning', 'Sonuç Bulunamadı', 'Belirlediğiniz kriterlere uygun izin talebi bulunamadı.');
+    } else {
+      showModal('success', 'Filtre Uygulandı', `${visibleCount} izin talebi listelendi.`);
+    }
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', function() {
+    // Uygula butonu
+    document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+    
+    // Temizle butonu
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+    
+    // Enter tuşu ile filtre uygulama
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        applyFilters();
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,1142 @@
+{% extends "layout.html" %} {% block content %}
+<div
+  class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+>
+  <h1 class="h2">Cihaz Yönetimi</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#addDeviceModal"
+    >
+      <i class="fas fa-plus"></i> Yeni Cihaz Ekle
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Cihaz Listesi -->
+  <div class="col-md-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Tüm Cihazlar</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>İsim</th>
+                <th>IP</th>
+                <th>Port</th>
+                <th>Durum</th>
+                <th>Son Bağlanma</th>
+                <th>İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for device in devices %}
+              <tr data-device-id="{{ device.device_id }}">
+                <td>{{ device.device_id }}</td>
+                <td>{{ device.name }}</td>
+                <td>{{ device.ip }}</td>
+                <td>{{ device.port }}</td>
+                <td>
+                  {% if device.last_status == 'connected' %}
+                  <span class="badge bg-success">Bağlı</span>
+                  {% elif device.last_status == 'disconnected' %}
+                  <span class="badge bg-danger">Bağlı Değil</span>
+                  {% elif device.last_status == 'error' %}
+                  <span class="badge bg-warning">Hata</span>
+                  {% else %}
+                  <span class="badge bg-secondary">Bilinmiyor</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ device.last_connection.strftime('%d.%m.%Y %H:%M') if
+                  device.last_connection else '-' }}
+                </td>
+                <td>
+                  <div class="btn-group">
+                    <!-- Bağlantı Test Butonu -->
+                    <button
+                      class="btn btn-sm btn-outline-primary test-connection-btn"
+                      data-device-id="{{ device.device_id }}"
+                      title="Bağlantıyı Test Et"
+                    >
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
+
+                    <!-- Düzenleme Butonu -->
+                    <button
+                      class="btn btn-sm btn-outline-secondary edit-device"
+                      data-device-id="{{ device.device_id }}"
+                      title="Düzenle"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </button>
+
+                    <!-- Cihaz İşlemleri Butonu -->
+                    <button
+                      class="btn btn-sm btn-outline-warning device-operations"
+                      data-device-id="{{ device.device_id }}"
+                      data-device-name="{{ device.name }}"
+                      title="Cihaz İşlemleri"
+                    >
+                      <i class="fas fa-tools"></i>
+                    </button>
+
+                    <!-- Silme Butonu -->
+                    <button
+                      class="btn btn-sm btn-outline-danger delete-device"
+                      data-device-id="{{ device.device_id }}"
+                      data-device-name="{{ device.name }}"
+                      title="Cihazı Sil"
+                    >
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bağlantı Sonucu Kartı (JavaScript ile gösterilecek) -->
+  <div class="col-md-12">
+    <div id="connectionResultCard" class="card mb-4 d-none">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Bağlantı Sonucu</h5>
+      </div>
+      <div class="card-body">
+        <div id="connectionResultContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Düzenleme Modal -->
+<div class="modal fade" id="editDeviceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cihaz Düzenle</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="editDeviceForm">
+          <div class="mb-3">
+            <label class="form-label">İsim</label>
+            <input type="text" class="form-control" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">IP Adresi</label>
+            <input
+              type="text"
+              class="form-control"
+              name="ip"
+              required
+              pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Port</label>
+            <input
+              type="number"
+              class="form-control"
+              name="port"
+              required
+              min="1"
+              max="65535"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Timeout (sn)</label>
+            <input
+              type="number"
+              class="form-control"
+              name="timeout"
+              min="1"
+              value="5"
+            />
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                name="is_active"
+                id="is_active"
+              />
+              <label class="form-check-label" for="is_active">Aktif</label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          İptal
+        </button>
+        <button type="button" class="btn btn-primary" id="saveDevice">
+          Kaydet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Yeni Cihaz Ekleme Modal -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Cihaz Ekle</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="addDeviceForm">
+          <div class="mb-3">
+            <label for="device_name" class="form-label">Cihaz Adı</label>
+            <input
+              type="text"
+              class="form-control"
+              id="new_device_name"
+              name="name"
+              required
+              maxlength="100"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="new_device_ip" class="form-label">IP Adresi</label>
+            <input
+              type="text"
+              class="form-control"
+              id="new_device_ip"
+              name="ip"
+              required
+              maxlength="45"
+              pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="new_device_port" class="form-label">Port</label>
+            <input
+              type="number"
+              class="form-control"
+              id="new_device_port"
+              name="port"
+              value="4370"
+              required
+              min="1"
+              max="65535"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="new_device_timeout" class="form-label"
+              >Timeout (sn)</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              id="new_device_timeout"
+              name="timeout"
+              value="5"
+              min="1"
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          İptal
+        </button>
+        <button type="button" class="btn btn-success" id="saveNewDevice">
+          <i class="fas fa-save"></i> Kaydet ve Test Et
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cihaz İşlemleri Modal -->
+<div class="modal fade" id="deviceOperationsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cihaz İşlemleri</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle"></i> Bu işlemler doğrudan cihaz
+          üzerinde değişiklik yapar, dikkatli kullanın!
+        </div>
+        <div class="d-grid gap-2">
+          <button
+            type="button"
+            id="syncDataBtn"
+            class="btn btn-outline-primary mb-2"
+          >
+            <i class="fas fa-sync"></i> Verileri Senkronize Et
+          </button>
+          <button
+            type="button"
+            id="clearRecordsBtn"
+            class="btn btn-outline-warning mb-2"
+          >
+            <i class="fas fa-trash"></i> Cihaz Kayıtlarını Temizle
+          </button>
+          <button
+            type="button"
+            id="restartDeviceBtn"
+            class="btn btn-outline-danger"
+          >
+            <i class="fas fa-redo-alt"></i> Cihazı Yeniden Başlat
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block additional_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Değişkenler
+    let currentDeviceId = null;
+    let currentDeviceIp = null;
+    let currentDevicePort = null;
+
+    // Düzenleme modalını aç
+    $(".edit-device").click(function () {
+      currentDeviceId = $(this).data("device-id");
+
+      // Buton loading durumu
+      const $button = $(this);
+      const originalHtml = $button.html();
+      $button.html('<i class="fas fa-spinner fa-spin"></i>');
+      $button.prop("disabled", true);
+
+      // Cihaz bilgilerini al
+      $.get(`/api/devices/${currentDeviceId}`)
+        .done(function (response) {
+          if (response.success) {
+            const device = response.device;
+
+            // Form alanlarını doldur
+            $('#editDeviceForm [name="name"]').val(device.name);
+            $('#editDeviceForm [name="ip"]').val(device.ip);
+            $('#editDeviceForm [name="port"]').val(device.port);
+            $('#editDeviceForm [name="timeout"]').val(device.timeout);
+            $('#editDeviceForm [name="is_active"]').prop(
+              "checked",
+              device.is_active
+            );
+
+            $("#editDeviceModal").modal("show");
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Hata",
+              text: "Cihaz bilgileri alınamadı: " + response.message,
+              confirmButtonText: "Tamam",
+            });
+          }
+        })
+        .fail(function (xhr) {
+          Swal.fire({
+            icon: "error",
+            title: "Hata",
+            text: "Cihaz bilgileri alınamadı: " + xhr.responseText,
+            confirmButtonText: "Tamam",
+          });
+        })
+        .always(function () {
+          // Buton durumunu geri al
+          $button.html(originalHtml);
+          $button.prop("disabled", false);
+        });
+    });
+
+    // Cihazı kaydet
+    $("#saveDevice").click(function () {
+      if (!currentDeviceId) return;
+
+      // Buton loading durumu
+      const $button = $(this);
+      const originalHtml = $button.html();
+      $button.html('<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...');
+      $button.prop("disabled", true);
+
+      const formData = {
+        name: $('#editDeviceForm [name="name"]').val(),
+        ip: $('#editDeviceForm [name="ip"]').val(),
+        port: parseInt($('#editDeviceForm [name="port"]').val()),
+        timeout: parseInt($('#editDeviceForm [name="timeout"]').val()),
+        is_active: $('#editDeviceForm [name="is_active"]').is(":checked"),
+      };
+
+      // Boş alan kontrolü
+      if (!formData.name || !formData.ip || !formData.port) {
+        Swal.fire({
+          icon: "warning",
+          title: "Eksik Bilgi",
+          text: "Lütfen tüm zorunlu alanları doldurun",
+          confirmButtonText: "Tamam",
+        });
+        $button.html(originalHtml);
+        $button.prop("disabled", false);
+        return;
+      }
+
+      $.ajax({
+        url: `/api/devices/${currentDeviceId}`,
+        method: "PUT",
+        contentType: "application/json",
+        data: JSON.stringify(formData),
+      })
+        .done(function (response) {
+          if (response.success) {
+            // DOM'da cihaz satırını güncelle
+            updateDeviceRowInTable(currentDeviceId, formData);
+
+            Swal.fire({
+              icon: "success",
+              title: "Başarılı",
+              text: "Cihaz başarıyla güncellendi",
+              timer: 2000,
+              timerProgressBar: true,
+              showConfirmButton: false,
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Hata",
+              text: "Cihaz güncellenemedi: " + response.message,
+              confirmButtonText: "Tamam",
+            });
+            // Butonu eski haline getir
+            $button.html(originalHtml);
+            $button.prop("disabled", false);
+          }
+        })
+        .fail(function (xhr) {
+          Swal.fire({
+            icon: "error",
+            title: "Hata",
+            text: "Cihaz güncellenemedi: " + xhr.responseText,
+            confirmButtonText: "Tamam",
+          });
+          // Butonu eski haline getir
+          $button.html(originalHtml);
+          $button.prop("disabled", false);
+        })
+        .always(function () {
+          $("#editDeviceModal").modal("hide");
+        });
+    });
+
+    // Yeni cihaz kaydet
+    $("#saveNewDevice").click(function () {
+      // Form verilerini al
+      const formData = {
+        name: $('#addDeviceForm [name="name"]').val(),
+        ip: $('#addDeviceForm [name="ip"]').val(),
+        port: parseInt($('#addDeviceForm [name="port"]').val()),
+        timeout: parseInt($('#addDeviceForm [name="timeout"]').val()),
+        is_active: true,
+      };
+
+      // Boş alan kontrolü
+      if (!formData.name || !formData.ip || !formData.port) {
+        alert("Lütfen tüm zorunlu alanları doldurun!");
+        return;
+      }
+
+      // Kaydet butonuna loading durumu ekle
+      const originalHtml = $(this).html();
+      $(this).html('<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...');
+      $(this).prop("disabled", true);
+
+      // API'ye POST isteği gönder
+      $.ajax({
+        url: `/api/devices`,
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(formData),
+      })
+        .done(function (response) {
+          if (response.success) {
+            // Tabloya yeni cihaz satırını ekle
+            addNewDeviceRowToTable(response.device_id, formData);
+
+            // Form'u temizle
+            $("#addDeviceForm")[0].reset();
+
+            // Başarılı ise sweetalert ile bildir
+            Swal.fire({
+              icon: "success",
+              title: "Başarılı!",
+              text: response.message,
+              confirmButtonText: "Tamam",
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Hata!",
+              text: response.message || "Cihaz eklenirken bir hata oluştu",
+              confirmButtonText: "Tamam",
+            });
+          }
+        })
+        .fail(function (xhr) {
+          Swal.fire({
+            icon: "error",
+            title: "Hata!",
+            text: "Cihaz eklenirken bir hata oluştu: " + xhr.responseText,
+            confirmButtonText: "Tamam",
+          });
+        })
+        .always(function () {
+          // Butonu eski haline getir
+          $("#saveNewDevice").html(originalHtml);
+          $("#saveNewDevice").prop("disabled", false);
+          // Modal'ı kapat
+          $("#addDeviceModal").modal("hide");
+        });
+    });
+
+    // Bağlantı testi işlevi - DOM manipülasyonu ile güncellenmiş versiyon
+    $(".test-connection-btn").click(function () {
+      const deviceId = $(this).data("device-id");
+      testDeviceConnectionInline(deviceId, this);
+    });
+
+    // Cihaz işlemleri modalı için
+    $(".device-operations").click(function () {
+      const deviceId = $(this).data("device-id");
+      const deviceName = $(this).data("device-name");
+
+      showDeviceOperations(deviceId, deviceName);
+    });
+
+    // Veri senkronizasyonu butonu
+    $("#syncDataBtn").click(function () {
+      const deviceId = $(this).data("device-id");
+      if (!deviceId) {
+        alert("Cihaz ID bilgisi bulunamadı!");
+        return;
+      }
+
+      if (
+        confirm(
+          "Cihaz verilerini senkronize etmek istediğinizden emin misiniz?"
+        )
+      ) {
+        // Butonu loading durumuna getir
+        const originalHtml = $(this).html();
+        $(this).html('<i class="fas fa-spinner fa-spin"></i> İşleniyor...');
+        $(this).prop("disabled", true);
+
+        // AJAX isteği gönder
+        $.post("/device/sync_users", { device_id: deviceId })
+          .done(function (response) {
+            if (response.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Başarılı!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Hata!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            }
+          })
+          .fail(function (xhr) {
+            Swal.fire({
+              icon: "error",
+              title: "Hata!",
+              text: "İşlem sırasında hata oluştu: " + xhr.responseText,
+              confirmButtonText: "Tamam",
+            });
+          })
+          .always(function () {
+            // Butonu eski haline getir
+            $("#syncDataBtn").html(originalHtml);
+            $("#syncDataBtn").prop("disabled", false);
+            // Modal'ı kapat
+            $("#deviceOperationsModal").modal("hide");
+          });
+      }
+    });
+
+    // Kayıt temizleme butonu
+    $("#clearRecordsBtn").click(function () {
+      const deviceId = $(this).data("device-id");
+      if (!deviceId) {
+        alert("Cihaz ID bilgisi bulunamadı!");
+        return;
+      }
+
+      if (
+        confirm(
+          "UYARI: Cihazdaki TÜM KAYITLARI SİLMEK istediğinizden emin misiniz? Bu işlem geri alınamaz!"
+        )
+      ) {
+        // Butonu loading durumuna getir
+        const originalHtml = $(this).html();
+        $(this).html('<i class="fas fa-spinner fa-spin"></i> Temizleniyor...');
+        $(this).prop("disabled", true);
+
+        // AJAX isteği gönder
+        $.post("/device/clear_records", { device_id: deviceId })
+          .done(function (response) {
+            if (response.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Başarılı!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Hata!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            }
+          })
+          .fail(function (xhr) {
+            Swal.fire({
+              icon: "error",
+              title: "Hata!",
+              text: "İşlem sırasında hata oluştu: " + xhr.responseText,
+              confirmButtonText: "Tamam",
+            });
+          })
+          .always(function () {
+            // Butonu eski haline getir
+            $("#clearRecordsBtn").html(originalHtml);
+            $("#clearRecordsBtn").prop("disabled", false);
+            // Modal'ı kapat
+            $("#deviceOperationsModal").modal("hide");
+          });
+      }
+    });
+
+    // Cihaz yeniden başlatma butonu
+    $("#restartDeviceBtn").click(function () {
+      const deviceId = $(this).data("device-id");
+      if (!deviceId) {
+        alert("Cihaz ID bilgisi bulunamadı!");
+        return;
+      }
+
+      if (confirm("Cihazı yeniden başlatmak istediğinizden emin misiniz?")) {
+        // Butonu loading durumuna getir
+        const originalHtml = $(this).html();
+        $(this).html(
+          '<i class="fas fa-spinner fa-spin"></i> Yeniden başlatılıyor...'
+        );
+        $(this).prop("disabled", true);
+
+        // AJAX isteği gönder
+        $.post("/device/restart", { device_id: deviceId })
+          .done(function (response) {
+            if (response.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Başarılı!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Hata!",
+                text: response.message,
+                confirmButtonText: "Tamam",
+              });
+            }
+          })
+          .fail(function (xhr) {
+            Swal.fire({
+              icon: "error",
+              title: "Hata!",
+              text: "İşlem sırasında hata oluştu: " + xhr.responseText,
+              confirmButtonText: "Tamam",
+            });
+          })
+          .always(function () {
+            // Butonu eski haline getir
+            $("#restartDeviceBtn").html(originalHtml);
+            $("#restartDeviceBtn").prop("disabled", false);
+            // Modal'ı kapat
+            $("#deviceOperationsModal").modal("hide");
+          });
+      }
+    });
+
+    // Cihaz silme butonu
+    $(".delete-device").click(function () {
+      const deviceId = $(this).data("device-id");
+      const deviceName = $(this).data("device-name");
+
+      confirmDeleteDevice(deviceId, deviceName);
+    });
+  });
+
+  // Cihaz işlemleri modalını göster
+  function showDeviceOperations(deviceId, deviceName) {
+    Swal.fire({
+      title: "Cihaz İşlemleri",
+      html: `
+        <div class="text-start">
+          <p><strong>Cihaz:</strong> ${deviceName}</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> Bu işlemler doğrudan cihaz üzerinde değişiklik yapar, dikkatli kullanın!
+          </div>
+          <div class="d-grid gap-2">
+            <button type="button" id="syncDataBtn" class="btn btn-outline-primary">
+              <i class="fas fa-sync"></i> Verileri Senkronize Et
+            </button>
+            <button type="button" id="clearRecordsBtn" class="btn btn-outline-warning">
+              <i class="fas fa-trash"></i> Cihaz Kayıtlarını Temizle
+            </button>
+            <button type="button" id="restartDeviceBtn" class="btn btn-outline-danger">
+              <i class="fas fa-redo-alt"></i> Cihazı Yeniden Başlat
+            </button>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      showConfirmButton: false,
+      cancelButtonText: "Kapat",
+      customClass: {
+        popup: "swal-custom-popup swal-wide",
+      },
+      didOpen: () => {
+        // Modal açıldığında buton event'lerini bağla
+        document.getElementById("syncDataBtn").addEventListener("click", () => {
+          performDeviceOperation(
+            deviceId,
+            "sync",
+            "Veriler senkronize ediliyor..."
+          );
+        });
+
+        document
+          .getElementById("clearRecordsBtn")
+          .addEventListener("click", () => {
+            Swal.fire({
+              title: "Kayıt Temizleme Onayı",
+              text: "Cihaz üzerindeki tüm kayıtları silmek istediğinize emin misiniz?",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#d33",
+              cancelButtonColor: "#6c757d",
+              confirmButtonText: "Evet, Temizle",
+              cancelButtonText: "İptal",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                performDeviceOperation(
+                  deviceId,
+                  "clear",
+                  "Kayıtlar temizleniyor..."
+                );
+              }
+            });
+          });
+
+        document
+          .getElementById("restartDeviceBtn")
+          .addEventListener("click", () => {
+            Swal.fire({
+              title: "Yeniden Başlatma Onayı",
+              text: "Cihazı yeniden başlatmak istediğinize emin misiniz?",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#d33",
+              cancelButtonColor: "#6c757d",
+              confirmButtonText: "Evet, Yeniden Başlat",
+              cancelButtonText: "İptal",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                performDeviceOperation(
+                  deviceId,
+                  "restart",
+                  "Cihaz yeniden başlatılıyor..."
+                );
+              }
+            });
+          });
+      },
+    });
+  }
+
+  // Cihaz işlemlerini gerçekleştir
+  function performDeviceOperation(deviceId, operation, loadingText) {
+    Swal.fire({
+      title: loadingText,
+      text: "İşlem gerçekleştiriliyor, lütfen bekleyin.",
+      icon: "info",
+      allowOutsideClick: false,
+      showConfirmButton: false,
+    });
+
+    $.ajax({
+      url: `/api/devices/${deviceId}/${operation}`,
+      method: "POST",
+      success: function (response) {
+        if (response.success) {
+          Swal.fire({
+            title: "Başarılı!",
+            text: response.message || "İşlem başarıyla tamamlandı.",
+            icon: "success",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: "Tamam",
+          });
+        } else {
+          Swal.fire({
+            title: "Hata!",
+            text: response.message || "İşlem gerçekleştirilemedi.",
+            icon: "error",
+            confirmButtonText: "Tamam",
+          });
+        }
+      },
+      error: function (xhr) {
+        Swal.fire({
+          title: "Hata!",
+          text: "İşlem sırasında bir hata oluştu: " + xhr.responseText,
+          icon: "error",
+          confirmButtonText: "Tamam",
+        });
+      },
+    });
+  }
+
+  // DOM Manipülasyon Fonksiyonları
+  function updateDeviceRowInTable(deviceId, deviceData) {
+    // Cihaz satırını bul
+    const row = document.querySelector(`tr[data-device-id="${deviceId}"]`);
+    if (!row) {
+      console.warn(`Cihaz satırı bulunamadı: ${deviceId}`);
+      return;
+    }
+
+    // Satır verilerini güncelle
+    const cells = row.querySelectorAll("td");
+    cells[1].textContent = deviceData.name; // İsim
+    cells[2].textContent = deviceData.ip; // IP
+    cells[3].textContent = deviceData.port; // Port
+
+    // Durum badge'ini güncelle (varsayılan olarak bilinmiyor)
+    const statusBadge = cells[4].querySelector(".badge");
+    if (statusBadge) {
+      statusBadge.className = "badge bg-secondary";
+      statusBadge.textContent = "Bilinmiyor";
+    }
+
+    // Son bağlanma tarihini temizle
+    cells[5].textContent = "-";
+
+    // Butonların dataset'lerini güncelle
+    const editBtn = row.querySelector(".edit-device");
+    const deviceOpsBtn = row.querySelector(".device-operations");
+    const deleteBtn = row.querySelector(".delete-device");
+
+    if (editBtn) {
+      editBtn.setAttribute("data-device-name", deviceData.name);
+    }
+    if (deviceOpsBtn) {
+      deviceOpsBtn.setAttribute("data-device-name", deviceData.name);
+    }
+    if (deleteBtn) {
+      deleteBtn.setAttribute("data-device-name", deviceData.name);
+    }
+  }
+
+  function addNewDeviceRowToTable(deviceId, deviceData) {
+    const tbody = document.querySelector(".table tbody");
+    if (!tbody) {
+      console.warn("Tablo tbody bulunamadı");
+      return;
+    }
+
+    // Yeni satır HTML'i oluştur
+    const newRowHTML = `
+      <tr data-device-id="${deviceId}">
+        <td>${deviceId}</td>
+        <td>${deviceData.name}</td>
+        <td>${deviceData.ip}</td>
+        <td>${deviceData.port}</td>
+        <td><span class="badge bg-secondary">Bilinmiyor</span></td>
+        <td>-</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline-primary test-connection-btn" 
+                    data-device-id="${deviceId}" title="Bağlantıyı Test Et">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary edit-device" 
+                    data-device-id="${deviceId}" data-device-name="${deviceData.name}" title="Düzenle">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-warning device-operations" 
+                    data-device-id="${deviceId}" data-device-name="${deviceData.name}" title="Cihaz İşlemleri">
+              <i class="fas fa-tools"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger delete-device" 
+                    data-device-id="${deviceId}" data-device-name="${deviceData.name}" title="Cihazı Sil">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    // Tabloya ekle
+    tbody.insertAdjacentHTML("beforeend", newRowHTML);
+
+    // Yeni eklenen satırdaki butonlara event listener'ları bağla
+    rebindEventHandlersForRow(deviceId);
+  }
+
+  function removeDeviceRowFromTable(deviceId) {
+    const row = document.querySelector(`tr[data-device-id="${deviceId}"]`);
+    if (row) {
+      row.remove();
+    }
+  }
+
+  function rebindEventHandlersForRow(deviceId) {
+    const row = document.querySelector(`tr[data-device-id="${deviceId}"]`);
+    if (!row) return;
+
+    // Test connection butonu
+    const testBtn = row.querySelector(".test-connection-btn");
+    if (testBtn) {
+      testBtn.addEventListener("click", function () {
+        const deviceId = this.dataset.deviceId;
+        testDeviceConnectionInline(deviceId, this);
+      });
+    }
+
+    // Edit butonu
+    const editBtn = row.querySelector(".edit-device");
+    if (editBtn) {
+      editBtn.addEventListener("click", function () {
+        const deviceId = this.dataset.deviceId;
+        const deviceName = this.dataset.deviceName;
+        editDeviceModal(deviceId, deviceName);
+      });
+    }
+
+    // Device operations butonu
+    const opsBtn = row.querySelector(".device-operations");
+    if (opsBtn) {
+      opsBtn.addEventListener("click", function () {
+        const deviceId = this.dataset.deviceId;
+        const deviceName = this.dataset.deviceName;
+        showDeviceOperations(deviceId, deviceName);
+      });
+    }
+
+    // Delete butonu
+    const deleteBtn = row.querySelector(".delete-device");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", function () {
+        const deviceId = this.dataset.deviceId;
+        const deviceName = this.dataset.deviceName;
+        confirmDeleteDevice(deviceId, deviceName);
+      });
+    }
+  }
+
+  function testDeviceConnectionInline(deviceId, buttonElement) {
+    const originalHtml = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    buttonElement.disabled = true;
+
+    // API çağrısı
+    fetch(`/api/devices/${deviceId}/test-connection`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Buton'u eski haline getir
+        buttonElement.innerHTML = originalHtml;
+        buttonElement.disabled = false;
+
+        // Durum badge'ini güncelle
+        const row = buttonElement.closest("tr");
+        const statusBadge = row.querySelector("td:nth-child(5) .badge");
+
+        if (data.success) {
+          statusBadge.className = "badge bg-success";
+          statusBadge.textContent = "Bağlı";
+
+          // Son bağlanma tarihini güncelle
+          const now = new Date();
+          const timeString =
+            now.toLocaleDateString("tr-TR") +
+            " " +
+            now.toLocaleTimeString("tr-TR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          row.querySelector("td:nth-child(6)").textContent = timeString;
+
+          // Başarı mesajı
+          Swal.fire({
+            icon: "success",
+            title: "Bağlantı Başarılı!",
+            text: "Cihaz bağlantısı başarıyla sağlandı.",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+          });
+        } else {
+          statusBadge.className = "badge bg-danger";
+          statusBadge.textContent = "Bağlı Değil";
+
+          Swal.fire({
+            icon: "error",
+            title: "Bağlantı Hatası",
+            text: data.message || "Cihaz bağlantısı başarısız oldu.",
+            confirmButtonText: "Tamam",
+          });
+        }
+      })
+      .catch((error) => {
+        buttonElement.innerHTML = originalHtml;
+        buttonElement.disabled = false;
+
+        const row = buttonElement.closest("tr");
+        const statusBadge = row.querySelector("td:nth-child(5) .badge");
+        statusBadge.className = "badge bg-warning";
+        statusBadge.textContent = "Hata";
+
+        Swal.fire({
+          icon: "error",
+          title: "Bağlantı Hatası",
+          text: "Bağlantı test edilirken bir hata oluştu.",
+          confirmButtonText: "Tamam",
+        });
+      });
+  }
+
+  // Cihaz silme onayı fonksiyonu
+  function confirmDeleteDevice(deviceId, deviceName) {
+    if (!deviceId) {
+      Swal.fire({
+        icon: "error",
+        title: "Hata",
+        text: "Cihaz ID bilgisi bulunamadı!",
+        confirmButtonText: "Tamam",
+      });
+      return;
+    }
+
+    // SweetAlert ile cihaz silme onayı
+    Swal.fire({
+      title: "Cihaz Silme Onayı",
+      html: `<strong>${deviceName}</strong> isimli cihazı silmek istediğinize emin misiniz?<br><br><span class="text-danger">Bu işlem geri alınamaz ve cihaza ait tüm kayıtlar da etkilenecektir!</span>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6c757d",
+      confirmButtonText: "Evet, Sil",
+      cancelButtonText: "İptal",
+      customClass: {
+        popup: "swal-custom-popup",
+        confirmButton: "swal-custom-button",
+        cancelButton: "swal-custom-cancel-button",
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Silme işlemi başladığında loading göster
+        Swal.fire({
+          title: "Siliniyor...",
+          text: "Cihaz siliniyor, lütfen bekleyin.",
+          icon: "info",
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          customClass: {
+            popup: "swal-custom-popup",
+          },
+        });
+
+        // DELETE isteği gönder
+        $.ajax({
+          url: `/api/devices/${deviceId}`,
+          method: "DELETE",
+          success: function (response) {
+            if (response.success) {
+              // Cihaz satırını tablodan kaldır
+              removeDeviceRowFromTable(deviceId);
+
+              Swal.fire({
+                title: "Başarılı!",
+                text: "Cihaz başarıyla silindi.",
+                icon: "success",
+                confirmButtonText: "Tamam",
+              });
+            } else {
+              Swal.fire({
+                title: "Hata!",
+                text: response.message || "Cihaz silinirken bir hata oluştu.",
+                icon: "error",
+                confirmButtonText: "Tamam",
+              });
+            }
+          },
+          error: function (xhr) {
+            Swal.fire({
+              title: "Hata!",
+              text: "Cihaz silinirken bir hata oluştu: " + xhr.responseText,
+              icon: "error",
+              confirmButtonText: "Tamam",
+            });
+          },
+        });
+      }
+    });
+  }
+</script>
+{% endblock %}

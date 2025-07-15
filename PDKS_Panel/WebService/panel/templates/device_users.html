@@ -1,0 +1,682 @@
+{% extends 'layout.html' %} {% block title %}Cihaz-Kullanıcı Atamaları{%
+endblock %} {% block content %}
+<div class="container-fluid">
+  <div
+    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+  >
+    <h1 class="h2">
+      <i class="fas fa-link me-2 text-primary"></i>
+      Cihaz-Kullanıcı Atamaları
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+      <button
+        type="button"
+        class="btn btn-success"
+        onclick="showAddAssignmentModal()"
+      >
+        <i class="fas fa-plus me-1"></i> Yeni Atama
+      </button>
+    </div>
+  </div>
+
+  <!-- Arama ve Filtreler -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('search_device_users') }}" class="row">
+        <div class="col-md-5 mb-3">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" 
+                   class="form-control" 
+                   name="q" 
+                   placeholder="Kullanıcı adı, ID, cihaz adı veya IP ara..." 
+                   value="{{ search_term if search_term else '' }}">
+          </div>
+          <small class="form-text text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Kullanıcı adı, kullanıcı ID, cihaz adı veya IP adresine göre arama yapabilirsiniz
+          </small>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+          <select class="form-select" name="status">
+            <option value="">Tüm Durumlar</option>
+            <option value="1" {% if status_filter == '1' %}selected{% endif %}>
+              Sadece Aktif
+            </option>
+            <option value="0" {% if status_filter == '0' %}selected{% endif %}>
+              Sadece Pasif
+            </option>
+          </select>
+          <small class="form-text text-muted">
+            <i class="fas fa-filter me-1"></i>Durum filtresi
+          </small>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <div class="d-flex">
+            <button type="submit" class="btn btn-primary me-2">
+              <i class="fas fa-search me-1"></i> Ara
+            </button>
+            {% if is_search %}
+            <a href="{{ url_for('device_users') }}" class="btn btn-outline-secondary">
+              <i class="fas fa-times me-1"></i> Temizle
+            </a>
+            {% endif %}
+          </div>
+          {% if is_search %}
+          <small class="form-text text-success mt-2">
+            <i class="fas fa-check-circle me-1"></i>
+            {{ total }} sonuç bulundu
+            {% if search_term %}
+              "{{ search_term }}" için
+            {% endif %}
+          </small>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- İstatistikler -->
+  <div class="d-flex flex-wrap justify-content-between mb-4 stats-container">
+    <div class="stats-item">
+      <div class="card stats-card stats-primary h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="stats-icon">
+            <i class="fas fa-link"></i>
+          </div>
+          <h3 class="stats-number text-primary">{{ total }}</h3>
+          <p class="stats-label">Toplam Atama</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-item">
+      <div class="card stats-card stats-info h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="stats-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="stats-number text-info">{{ users|length }}</h3>
+          <p class="stats-label">Kullanıcı</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-item">
+      <div class="card stats-card stats-warning h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="stats-icon">
+            <i class="fas fa-microchip"></i>
+          </div>
+          <h3 class="stats-number text-warning">{{ devices|length }}</h3>
+          <p class="stats-label">Cihaz</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-item">
+      <div class="card stats-card stats-success h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="stats-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 class="stats-number text-success">{{ active_assignments }}</h3>
+          <p class="stats-label">Aktif Atama</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats-item">
+      <div class="card stats-card stats-secondary h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="stats-icon">
+            <i class="fas fa-pause-circle"></i>
+          </div>
+          <h3 class="stats-number text-secondary">{{ passive_assignments }}</h3>
+          <p class="stats-label">Pasif Atama</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Atamalar Tablosu -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+      <h5 class="card-title mb-0">
+        <i class="fas fa-table me-2 text-primary"></i>
+        Cihaz-Kullanıcı Atamaları
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      {% if device_user_records %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th class="text-center" style="width: 80px">ID</th>
+              <th>Kullanıcı</th>
+              <th>Cihaz</th>
+              <th class="text-center" style="width: 100px">Durum</th>
+              <th class="text-center" style="width: 140px">Atama Tarihi</th>
+              <th class="text-center" style="width: 140px">Son Güncelleme</th>
+              <th class="text-center" style="width: 120px">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for device_user, user, device in device_user_records %}
+            <tr>
+              <td class="text-center align-middle" data-label="ID">
+                <span class="badge bg-secondary rounded-pill"
+                  >{{ device_user.device_user_id }}</span
+                >
+              </td>
+              <td class="align-middle" data-label="Kullanıcı">
+                <div class="d-flex align-items-center">
+                  <div
+                    class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                  >
+                    <i class="fas fa-user text-white"></i>
+                  </div>
+                  <div>
+                    <strong class="text-dark">{{ user.name }}</strong><br />
+                    <small class="text-muted">ID: {{ user.user_id }}</small>
+                  </div>
+                </div>
+              </td>
+              <td class="align-middle" data-label="Cihaz">
+                <div class="d-flex align-items-center">
+                  <div
+                    class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center me-2"
+                  >
+                    <i class="fas fa-microchip text-white"></i>
+                  </div>
+                  <div>
+                    <strong class="text-dark">{{ device.name }}</strong><br />
+                    <small class="text-muted"
+                      >{{ device.ip }}:{{ device.port }}</small
+                    >
+                  </div>
+                </div>
+              </td>
+              <td class="text-center align-middle" data-label="Durum">
+                {% if device_user.status == 1 %}
+                <span
+                  class="badge bg-success rounded-pill"
+                  title="Kullanıcı bu cihazı kullanabilir"
+                >
+                  <i class="fas fa-check me-1"></i>Aktif
+                </span>
+                {% else %}
+                <span
+                  class="badge bg-secondary rounded-pill"
+                  title="Kullanıcı bu cihaza erişemez (geçici olarak devre dışı)"
+                >
+                  <i class="fas fa-times me-1"></i>Pasif
+                </span>
+                {% endif %}
+              </td>
+              <td class="text-center align-middle" data-label="Atama Tarihi">
+                <small class="text-muted">
+                  {% if device_user.created_at %}
+                  <i class="fas fa-calendar-alt me-1"></i>
+                  {{ device_user.created_at.strftime('%d.%m.%Y') }}<br />
+                  <i class="fas fa-clock me-1"></i>
+                  {{ device_user.created_at.strftime('%H:%M') }} {% else %} - {%
+                  endif %}
+                </small>
+              </td>
+              <td class="text-center align-middle" data-label="Son Güncelleme">
+                <small class="text-muted">
+                  {% if device_user.updated_at %}
+                  <i class="fas fa-calendar-alt me-1"></i>
+                  {{ device_user.updated_at.strftime('%d.%m.%Y') }}<br />
+                  <i class="fas fa-clock me-1"></i>
+                  {{ device_user.updated_at.strftime('%H:%M') }} {% else %} - {%
+                  endif %}
+                </small>
+              </td>
+              <td class="text-center align-middle" data-label="İşlemler">
+                <div class="btn-group" role="group">
+                  <button
+                    type="button"
+                    class="btn btn-outline-{% if device_user.status == 1 %}warning{% else %}success{% endif %}"
+                    title="{% if device_user.status == 1 %}Pasifleştir{% else %}Aktifleştir{% endif %}"
+                    onclick="toggleAssignmentStatus({{ device_user.device_user_id }}, {{ device_user.status }}, '{{ user.name }}', '{{ device.name }}')"
+                    style="padding: 0.5rem 0.75rem;"
+                  >
+                    <i
+                      class="fas fa-{% if device_user.status == 1 %}eye-slash{% else %}eye{% endif %}"
+                    ></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    title="Sil"
+                    onclick="deleteAssignment({{ device_user.device_user_id }}, '{{ user.name }}', '{{ device.name }}')"
+                    style="padding: 0.5rem 0.75rem;"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if total_pages > 1 %}
+      <div class="p-3 bg-light border-top">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            {% if page > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{% if is_search %}{{ url_for('search_device_users', q=search_term, status=status_filter, page=page-1) }}{% else %}{{ url_for('device_users', page=page-1) }}{% endif %}">
+                <i class="fas fa-chevron-left"></i> Önceki
+              </a>
+            </li>
+            {% endif %}
+            
+            {% set start_page = [1, page - 2]|max %}
+            {% set end_page = [total_pages, page + 2]|min %}
+            
+            {% if start_page > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{% if is_search %}{{ url_for('search_device_users', q=search_term, status=status_filter, page=1) }}{% else %}{{ url_for('device_users', page=1) }}{% endif %}">1</a>
+            </li>
+            {% if start_page > 2 %}
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            {% endif %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+              {% if p == page %}
+              <li class="page-item active">
+                <span class="page-link">{{ p }}</span>
+              </li>
+              {% else %}
+              <li class="page-item">
+                <a class="page-link" href="{% if is_search %}{{ url_for('search_device_users', q=search_term, status=status_filter, page=p) }}{% else %}{{ url_for('device_users', page=p) }}{% endif %}">{{ p }}</a>
+              </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if end_page < total_pages %}
+            {% if end_page < total_pages - 1 %}
+            <li class="page-item disabled">
+              <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            <li class="page-item">
+              <a class="page-link" href="{% if is_search %}{{ url_for('search_device_users', q=search_term, status=status_filter, page=total_pages) }}{% else %}{{ url_for('device_users', page=total_pages) }}{% endif %}">{{ total_pages }}</a>
+            </li>
+            {% endif %}
+            
+            {% if page < total_pages %}
+            <li class="page-item">
+              <a class="page-link" href="{% if is_search %}{{ url_for('search_device_users', q=search_term, status=status_filter, page=page+1) }}{% else %}{{ url_for('device_users', page=page+1) }}{% endif %}">
+                Sonraki <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %} {% else %}
+      <div class="text-center py-5">
+        <div class="mb-4">
+          <i class="fas fa-link fa-4x text-muted opacity-50"></i>
+        </div>
+        <h5 class="text-muted mb-2">Henüz atama yapılmamış</h5>
+        <p class="text-muted mb-4">
+          İlk atamayı yapmak için yukarıdaki "Yeni Atama" butonunu kullanın.
+        </p>
+        <button
+          type="button"
+          class="btn btn-success"
+          onclick="showAddAssignmentModal()"
+        >
+          <i class="fas fa-plus me-1"></i> İlk Atamayı Yap
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Kullanıcı ve Cihaz Verilerini JavaScript'e Aktar -->
+<script type="text/javascript">
+  // Kullanıcı verilerini manuel olarak oluştur
+  window.usersData = [
+    {% for user in users %}
+    {
+      user_id: {{ user.user_id }},
+      name: "{{ user.name|replace('"', '\\"') }}",
+      email: "{{ user.email|replace('"', '\\"') }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  // Cihaz verilerini manuel olarak oluştur
+  window.devicesData = [
+    {% for device in devices %}
+    {
+      device_id: {{ device.device_id }},
+      name: "{{ device.name|replace('"', '\\"') }}",
+      ip: "{{ device.ip }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+</script>
+
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+  .avatar-sm {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.875rem;
+  }
+
+  .opacity-25 {
+    opacity: 0.25 !important;
+  }
+
+  .opacity-50 {
+    opacity: 0.5 !important;
+  }
+
+  .shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+  .shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .rounded-pill {
+    border-radius: 50rem !important;
+  }
+
+  .btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+
+  /* SweetAlert özel stiller */
+  .swal2-popup .swal2-input,
+  .swal2-popup .swal2-select {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .swal2-popup .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .swal2-popup .form-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .swal2-popup .text-danger {
+    color: #dc3545 !important;
+  }
+
+  @media (max-width: 768px) {
+    .btn-group > .btn {
+      padding: 0.375rem 0.625rem;
+      font-size: 0.875rem;
+    }
+
+    .table-responsive {
+      font-size: 0.8rem;
+    }
+
+    .avatar-sm {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.75rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Tooltip başlatma
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Yeni Atama Modal'ı
+  function showAddAssignmentModal() {
+    // Kullanıcı seçeneklerini oluştur
+    let userOptions = '<option value="">Kullanıcı seçin...</option>';
+    window.usersData.forEach(user => {
+      userOptions += `<option value="${user.user_id}">${user.name} (ID: ${user.user_id})</option>`;
+    });
+
+    // Cihaz seçeneklerini oluştur
+    let deviceOptions = '<option value="">Cihaz seçin...</option>';
+    window.devicesData.forEach(device => {
+      deviceOptions += `<option value="${device.device_id}">${device.name} (${device.ip})</option>`;
+    });
+
+    Swal.fire({
+      title: '<i class="fas fa-plus text-primary"></i> Yeni Cihaz-Kullanıcı Ataması',
+      html: `
+        <div class="row">
+          <div class="col-12 mb-3">
+            <div class="form-group text-start">
+              <label class="form-label">
+                <i class="fas fa-user me-1 text-primary"></i>
+                Kullanıcı <span class="text-danger">*</span>
+              </label>
+              <select id="user_id" class="swal2-select" style="width: 100%;">
+                ${userOptions}
+              </select>
+            </div>
+          </div>
+          <div class="col-12 mb-3">
+            <div class="form-group text-start">
+              <label class="form-label">
+                <i class="fas fa-microchip me-1 text-warning"></i>
+                Cihaz <span class="text-danger">*</span>
+              </label>
+              <select id="device_id" class="swal2-select" style="width: 100%;">
+                ${deviceOptions}
+              </select>
+            </div>
+          </div>
+          <div class="col-12 mb-3">
+            <div class="form-group text-start">
+              <label class="form-label">
+                <i class="fas fa-toggle-on me-1 text-success"></i>
+                Durum
+              </label>
+              <select id="status" class="swal2-select" style="width: 100%;">
+                <option value="1" selected>Aktif</option>
+                <option value="0">Pasif</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `,
+      width: '500px',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-save me-1"></i> Kaydet',
+      cancelButtonText: '<i class="fas fa-times me-1"></i> İptal',
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      preConfirm: () => {
+        const userId = document.getElementById('user_id').value;
+        const deviceId = document.getElementById('device_id').value;
+        const status = document.getElementById('status').value;
+
+        if (!userId || !deviceId) {
+          Swal.showValidationMessage('Lütfen kullanıcı ve cihaz seçimini yapın!');
+          return false;
+        }
+
+        return {
+          user_id: userId,
+          device_id: deviceId,
+          status: status
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Loading göster
+        Swal.fire({
+          title: 'İşlem yapılıyor...',
+          text: 'Atama kaydediliyor, lütfen bekleyin.',
+          icon: 'info',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // Form verilerini hazırla
+        const formData = new FormData();
+        formData.append('user_id', result.value.user_id);
+        formData.append('device_id', result.value.device_id);
+        formData.append('status', result.value.status);
+
+        // Sunucuya gönder
+        fetch('{{ url_for("add_device_user") }}', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (response.ok) {
+            Swal.fire({
+              title: 'Başarılı!',
+              text: 'Kullanıcı başarıyla cihaza atandı!',
+              icon: 'success',
+              timer: 2000,
+              timerProgressBar: true
+            }).then(() => {
+              window.location.reload();
+            });
+          } else {
+            throw new Error('İşlem başarısız');
+          }
+        })
+        .catch(error => {
+          Swal.fire({
+            title: 'Hata!',
+            text: 'Atama sırasında bir hata oluştu.',
+            icon: 'error',
+            confirmButtonText: 'Tamam'
+          });
+        });
+      }
+    });
+  }
+
+  // Atama Silme
+  function deleteAssignment(assignmentId, userName, deviceName) {
+    Swal.fire({
+      title: 'Atamayı Sil',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+          <p class="mb-2">Bu atamayı silmek istediğinizden emin misiniz?</p>
+          <div class="alert alert-warning">
+            <strong>${userName}</strong> kullanıcısının <strong>${deviceName}</strong> cihazına erişimi kalıcı olarak kaldırılacak.
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-trash me-1"></i> Evet, Sil',
+      cancelButtonText: '<i class="fas fa-times me-1"></i> İptal',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Loading göster
+        Swal.fire({
+          title: 'Siliniyor...',
+          text: 'Atama siliniyor, lütfen bekleyin.',
+          icon: 'info',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // Form oluştur ve gönder
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/device-users/delete/' + assignmentId;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+
+  // Atama Durumu Değiştirme
+  function toggleAssignmentStatus(assignmentId, currentStatus, userName, deviceName) {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    const statusText = newStatus === 1 ? 'Aktif' : 'Pasif';
+    const actionText = newStatus === 1 ? 'aktifleştirilecek' : 'pasifleştirilecek';
+    const iconClass = newStatus === 1 ? 'fa-eye text-success' : 'fa-eye-slash text-warning';
+
+    Swal.fire({
+      title: 'Durum Değiştir',
+      html: `
+        <div class="text-center">
+          <i class="fas ${iconClass} fa-3x mb-3"></i>
+          <p class="mb-2">Bu atamanın durumunu değiştirmek istediğinizden emin misiniz?</p>
+          <div class="alert alert-info">
+            <strong>${userName}</strong> kullanıcısının <strong>${deviceName}</strong> cihazına erişimi <strong>${actionText}</strong>.
+          </div>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: `<i class="fas fa-${newStatus === 1 ? 'eye' : 'eye-slash'} me-1"></i> Evet, ${statusText} Yap`,
+      cancelButtonText: '<i class="fas fa-times me-1"></i> İptal',
+      confirmButtonColor: newStatus === 1 ? '#28a745' : '#ffc107',
+      cancelButtonColor: '#6c757d'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Loading göster
+        Swal.fire({
+          title: 'Güncelleniyor...',
+          text: 'Atama durumu güncelleniyor, lütfen bekleyin.',
+          icon: 'info',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // Form oluştur ve gönder
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/device-users/toggle-status/' + assignmentId;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

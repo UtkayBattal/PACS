@@ -1,0 +1,344 @@
+{% extends "layout.html" %} {% block title %}Yeni İzin Talebi{% endblock %} {%
+block content %}
+<div class="container-fluid px-4">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="fas fa-plus me-2"></i>Yeni İzin Talebi
+    </h1>
+    <a
+      href="{{ url_for('leave_requests.employee_panel') }}"
+      class="btn btn-secondary"
+    >
+      <i class="fas fa-arrow-left me-1"></i> Geri Dön
+    </a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-calendar-plus me-1"></i>İzin Talebi Formu
+          </h6>
+        </div>
+        <div class="card-body">
+          <form id="leaveRequestForm" method="POST" action="{{ url_for('leave_requests.create_request') }}">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="leave_type" class="form-label">
+                  <i class="fas fa-tag me-1"></i>İzin Türü
+                </label>
+                <select
+                  class="form-select"
+                  id="leave_type"
+                  name="leave_type"
+                  required
+                >
+                  <option value="Yıllık İzin" selected>Yıllık İzin</option>
+                  <option value="Hastalık İzni">Hastalık İzni</option>
+                  <option value="Mazeret İzni">Mazeret İzni</option>
+                  <option value="Doğum İzni">Doğum İzni</option>
+                  <option value="Babalık İzni">Babalık İzni</option>
+                  <option value="Evlilik İzni">Evlilik İzni</option>
+                  <option value="Ölüm İzni">Ölüm İzni</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">
+                  <i class="fas fa-calculator me-1"></i>Tahmini Gün Sayısı
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="daysDisplay"
+                  readonly
+                  placeholder="Tarih seçtikten sonra hesaplanacak"
+                />
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="start_date" class="form-label">
+                  <i class="fas fa-calendar-alt me-1"></i>Başlangıç Tarihi
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="start_date"
+                  name="start_date"
+                  required
+                />
+                <div class="form-text">İzninizin başlayacağı tarih</div>
+              </div>
+              <div class="col-md-6">
+                <label for="end_date" class="form-label">
+                  <i class="fas fa-calendar-check me-1"></i>Bitiş Tarihi
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="end_date"
+                  name="end_date"
+                  required
+                />
+                <div class="form-text">İzninizin biteceği tarih</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="reason" class="form-label">
+                <i class="fas fa-comment me-1"></i>İzin Sebebi
+              </label>
+              <textarea
+                class="form-control"
+                id="reason"
+                name="reason"
+                rows="4"
+                placeholder="İzin alma sebebinizi detaylı olarak açıklayınız..."
+                required
+              ></textarea>
+              <div class="form-text">Minimum 10 karakter gereklidir.</div>
+            </div>
+
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Bilgilendirme:</strong>
+              <ul class="mb-0 mt-2">
+                <li>
+                  İzin talebiniz yöneticiniz tarafından değerlendirilecektir.
+                </li>
+                <li>
+                  Acil durumlar dışında en az 3 gün önceden başvuru yapılması
+                  önerilir.
+                </li>
+                <li>
+                  Talep durumunu "İzin Taleplerim" sayfasından takip
+                  edebilirsiniz.
+                </li>
+                <li>Onaylanmamış taleplerinizi iptal edebilirsiniz.</li>
+              </ul>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button
+                type="button"
+                class="btn btn-secondary me-md-2"
+                onclick="window.location.href='{{ url_for('leave_requests.employee_panel') }}'"
+              >
+                <i class="fas fa-times me-1"></i> İptal
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-1"></i> Talep Gönder
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %} {% block additional_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Minimum tarih ayarla (bugün)
+    const today = new Date().toISOString().split("T")[0];
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+    
+    startDateInput.setAttribute("min", today);
+    endDateInput.setAttribute("min", today);
+
+    // Tarih değişikliklerini dinle
+    startDateInput.addEventListener("change", calculateDays);
+    endDateInput.addEventListener("change", calculateDays);
+
+    // Form gönderimi
+    const form = document.getElementById("leaveRequestForm");
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      const reason = document.getElementById("reason").value.trim();
+      const leaveType = document.getElementById("leave_type").value;
+
+      // Basit validasyon
+      if (!startDate || !endDate || !reason) {
+        showValidationError("Eksik Bilgi", "Lütfen tüm alanları doldurunuz.", "fas fa-info-circle");
+        return;
+      }
+
+      if (reason.length < 10) {
+        showValidationError("Yetersiz Açıklama", "İzin sebebi en az 10 karakter olmalıdır.", "fas fa-edit");
+        return;
+      }
+
+      if (new Date(startDate) > new Date(endDate)) {
+        showValidationError("Geçersiz Tarih", "Başlangıç tarihi bitiş tarihinden sonra olamaz.", "fas fa-calendar-times");
+        return;
+      }
+
+      // Yükleniyor mesajı göster
+      Swal.fire({
+        title: 'İzin Talebi Gönderiliyor...',
+        html: `
+          <div class="text-center">
+            <i class="fas fa-paper-plane fa-3x text-primary mb-3"></i>
+            <p class="mb-2">Talebiniz işleniyor...</p>
+            <small class="text-muted">Lütfen bekleyiniz.</small>
+          </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'swal-custom-popup'
+        }
+      });
+
+      // Form gönder
+      fetch('{{ url_for("leave_requests.create_request") }}', {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Başarı mesajı
+          Swal.fire({
+            title: 'İzin Talebi Oluşturuldu!',
+            html: `
+              <div class="text-center">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h5 class="text-success mb-3">${data.message}</h5>
+                <p class="text-muted mb-2">Talebiniz yöneticiniz tarafından değerlendirilerek size bildirilecektir.</p>
+                <small class="text-muted">İzin taleplerinizi "İzin Taleplerim" sayfasından takip edebilirsiniz.</small>
+              </div>
+            `,
+            icon: 'success',
+            confirmButtonText: '<i class="fas fa-list me-1"></i> Taleplerime Git',
+            confirmButtonColor: '#28a745',
+            customClass: {
+              popup: 'swal-custom-popup',
+              confirmButton: 'swal-custom-button'
+            }
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = '{{ url_for("leave_requests.employee_panel") }}';
+            }
+          });
+        } else {
+          // Sunucu hatası
+          showServerError(data.message);
+        }
+      })
+      .catch(error => {
+        // Ağ hatası
+        showNetworkError();
+      });
+    });
+  });
+
+  function calculateDays() {
+    const startDate = document.getElementById("start_date").value;
+    const endDate = document.getElementById("end_date").value;
+    const daysDisplay = document.getElementById("daysDisplay");
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      if (start <= end) {
+        const timeDiff = end.getTime() - start.getTime();
+        const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+        daysDisplay.value = dayDiff + " gün";
+
+        // Bitiş tarihinin minimum değerini güncelle
+        document.getElementById("end_date").setAttribute("min", startDate);
+      } else {
+        daysDisplay.value = "Geçersiz tarih aralığı";
+      }
+    } else {
+      daysDisplay.value = "";
+    }
+  }
+
+  // Validasyon hatası modal'ı
+  function showValidationError(title, message, icon = "fas fa-exclamation-triangle") {
+    Swal.fire({
+      title: title,
+      html: `
+        <div class="text-center">
+          <i class="${icon} fa-3x text-warning mb-3"></i>
+          <p class="mb-2">${message}</p>
+          <small class="text-muted">Lütfen formu kontrol ediniz.</small>
+        </div>
+      `,
+      icon: 'warning',
+      confirmButtonText: '<i class="fas fa-edit me-1"></i> Düzelt',
+      confirmButtonColor: '#ffc107',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button'
+      }
+    });
+  }
+
+  // Sunucu hatası modal'ı
+  function showServerError(message) {
+    Swal.fire({
+      title: 'İşlem Başarısız!',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-server fa-3x text-danger mb-3"></i>
+          <p class="mb-2">${message}</p>
+          <small class="text-muted">Lütfen tekrar deneyiniz veya sistem yöneticisine başvurunuz.</small>
+        </div>
+      `,
+      icon: 'error',
+      confirmButtonText: '<i class="fas fa-redo me-1"></i> Tekrar Dene',
+      confirmButtonColor: '#dc3545',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button'
+      }
+    });
+  }
+
+  // Ağ hatası modal'ı
+  function showNetworkError() {
+    Swal.fire({
+      title: 'Bağlantı Hatası!',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-wifi fa-3x text-danger mb-3"></i>
+          <p class="mb-2">İşlem sırasında bir bağlantı hatası oluştu.</p>
+          <small class="text-muted">İnternet bağlantınızı kontrol ediniz ve tekrar deneyiniz.</small>
+        </div>
+      `,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-redo me-1"></i> Tekrar Dene',
+      cancelButtonText: '<i class="fas fa-times me-1"></i> İptal',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      customClass: {
+        popup: 'swal-custom-popup',
+        confirmButton: 'swal-custom-button',
+        cancelButton: 'swal-custom-cancel-button'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Form'u tekrar gönder
+        document.getElementById("leaveRequestForm").dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+</script>
+{% endblock %}

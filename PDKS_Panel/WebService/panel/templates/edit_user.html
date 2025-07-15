@@ -1,0 +1,306 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Kullanıcı Düzenle</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('users') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Kullanıcılara Dön
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-edit me-2"></i>{{ user.name }} (ID: {{ user.user_id }})
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_user', user_id=user.user_id) }}" class="needs-validation" novalidate>
+                    <!-- Kimlik Bilgileri -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">Kimlik Bilgileri</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="user_id" class="form-label">Personel ID</label>
+                                    <input type="text" class="form-control" id="user_id" name="user_id" value="{{ user.user_id }}" readonly>
+                                    <small class="form-text text-muted">Sistem tarafından atanmış ID değiştirilemez.</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="name" class="form-label">Ad Soyad *</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                                    <div class="invalid-feedback">Ad Soyad alanı zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="tckn" class="form-label">TC Kimlik No *</label>
+                                    <input type="text" class="form-control" id="tckn" name="tckn" value="{{ user.TCKN if user.TCKN else '' }}" maxlength="11" pattern="[0-9]{11}" required>
+                                    <div class="invalid-feedback">Geçerli bir TC Kimlik No girin (11 haneli).</div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-4">
+                                    <label for="card" class="form-label">Kart No</label>
+                                    <input type="text" class="form-control" id="card" name="card" value="{{ user.card_no if user.card_no else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="phone_number" class="form-label">Telefon Numarası</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+90</span>
+                                        <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ user.phone_number[3:] if user.phone_number and user.phone_number.startswith('+90') else '' }}" placeholder="5XX XXX XX XX" pattern="[0-9]{10}" maxlength="10">
+                                    </div>
+                                    <small class="form-text text-muted">10 haneli numara girin, ülke kodu otomatik eklenecek</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <!-- Boş alan -->
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                    <div class="invalid-feedback">Geçerli bir email adresi girin.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label">Yeni Şifre</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" name="password" minlength="4" maxlength="8">
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Boş bırakırsanız şifre değişmez. 4-8 karakter uzunluğunda olmalıdır.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kişisel Bilgiler -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">Kişisel Bilgiler</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="cinsiyet" class="form-label">Cinsiyet *</label>
+                                    <select class="form-select" id="cinsiyet" name="gender" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="Kadın" {% if user.gender == 'Kadın' %}selected{% endif %}>Kadın</option>
+                                        <option value="Erkek" {% if user.gender == 'Erkek' %}selected{% endif %}>Erkek</option>
+                                    </select>
+                                    <div class="invalid-feedback">Cinsiyet seçimi zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="uyruk" class="form-label">Uyruk *</label>
+                                    <select class="form-select" id="uyruk" name="nationality" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="T.C." {% if user.nationality == 'T.C.' %}selected{% endif %}>T.C.</option>
+                                        <option value="Diğer" {% if user.nationality == 'Diğer' %}selected{% endif %}>Diğer</option>
+                                    </select>
+                                    <div class="invalid-feedback">Uyruk seçimi zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="egitim_durumu" class="form-label">Eğitim Durumu *</label>
+                                    <select class="form-select" id="egitim_durumu" name="education_level" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="İlköğretim" {% if user.education_level == 'İlköğretim' %}selected{% endif %}>İlköğretim</option>
+                                        <option value="Ortaokul" {% if user.education_level == 'Ortaokul' %}selected{% endif %}>Ortaokul</option>
+                                        <option value="Lise" {% if user.education_level == 'Lise' %}selected{% endif %}>Lise</option>
+                                        <option value="Ön Lisans" {% if user.education_level == 'Ön Lisans' %}selected{% endif %}>Ön Lisans</option>
+                                        <option value="Lisans" {% if user.education_level == 'Lisans' %}selected{% endif %}>Lisans</option>
+                                        <option value="Yüksek Lisans" {% if user.education_level == 'Yüksek Lisans' %}selected{% endif %}>Yüksek Lisans</option>
+                                        <option value="Doktora" {% if user.education_level == 'Doktora' %}selected{% endif %}>Doktora</option>
+                                    </select>
+                                    <div class="invalid-feedback">Eğitim durumu seçimi zorunludur.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- İş Bilgileri -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">İş Bilgileri</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="meslek" class="form-label">Meslek *</label>
+                                    <select class="form-select" id="meslek" name="occupation" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="Mühendis" {% if user.occupation == 'Mühendis' %}selected{% endif %}>Mühendis</option>
+                                        <option value="Tekniker" {% if user.occupation == 'Tekniker' %}selected{% endif %}>Tekniker</option>
+                                        <option value="Memur" {% if user.occupation == 'Memur' %}selected{% endif %}>Memur</option>
+                                        <option value="İşçi" {% if user.occupation == 'İşçi' %}selected{% endif %}>İşçi</option>
+                                        <option value="Yönetici" {% if user.occupation == 'Yönetici' %}selected{% endif %}>Yönetici</option>
+                                        <option value="Diğer" {% if user.occupation == 'Diğer' %}selected{% endif %}>Diğer</option>
+                                    </select>
+                                    <div class="invalid-feedback">Meslek seçimi zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="is_tanimi" class="form-label">İş Tanımı</label>
+                                    <input type="text" class="form-control" id="is_tanimi" name="job_title" value="{{ user.job_title if user.job_title else '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="departman" class="form-label">Departman *</label>
+                                    <select class="form-select" id="departman" name="department" required>
+                                        <option value="">Seçiniz...</option>
+                                        {% if departments %}
+                                            {% for department in departments %}
+                                                <option value="{{ department.department_name }}" 
+                                                    {% if user.department and user.department.department_name == department.department_name %}selected{% endif %}>
+                                                    {{ department.department_name }}
+                                                </option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                    <div class="invalid-feedback">Departman seçimi zorunludur.</div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-4">
+                                    <label for="calisma_tipi" class="form-label">Çalışma Tipi *</label>
+                                    <select class="form-select" id="calisma_tipi" name="work_type" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="Tam Zamanlı" {% if user.work_type == 'Tam Zamanlı' %}selected{% endif %}>Tam Zamanlı</option>
+                                        <option value="Yarı Zamanlı" {% if user.work_type == 'Yarı Zamanlı' %}selected{% endif %}>Yarı Zamanlı</option>
+                                    </select>
+                                    <div class="invalid-feedback">Çalışma tipi seçimi zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="calisma_durumu" class="form-label">Çalışma Durumu *</label>
+                                    <select class="form-select" id="calisma_durumu" name="employment_status" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="Memur" {% if user.employment_status == 'Memur' %}selected{% endif %}>Memur</option>
+                                        <option value="Sözleşmeli" {% if user.employment_status == 'Sözleşmeli' %}selected{% endif %}>Sözleşmeli</option>
+                                        <option value="Kadrolu İşçi" {% if user.employment_status == 'Kadrolu İşçi' %}selected{% endif %}>Kadrolu İşçi</option>
+                                        <option value="Geçici İşçi" {% if user.employment_status == 'Geçici İşçi' %}selected{% endif %}>Geçici İşçi</option>
+                                        <option value="Şirket Personeli" {% if user.employment_status == 'Şirket Personeli' %}selected{% endif %}>Şirket Personeli</option>
+                                        <option value="Geçici Süreli Personel" {% if user.employment_status == 'Geçici Süreli Personel' %}selected{% endif %}>Geçici Süreli Personel</option>
+                                    </select>
+                                    <div class="invalid-feedback">Çalışma durumu seçimi zorunludur.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="group_id" class="form-label">Grup ID</label>
+                                    <input type="number" class="form-control" id="group_id" name="group_id" value="{{ user.group_id if user.group_id else '' }}" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mt-3">
+                                <div class="col-md-6">
+                                    <label for="start_date" class="form-label">İşe Başlangıç Tarihi</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ user.start_date.strftime('%Y-%m-%d') if user.start_date else '' }}">
+                                    <small class="form-text text-muted">İsteğe bağlı - işe başlama tarihi</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="end_date" class="form-label">İşten Çıkış Tarihi</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ user.end_date.strftime('%Y-%m-%d') if user.end_date else '' }}">
+                                    <small class="form-text text-muted">İsteğe bağlı - işten ayrılma tarihi</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yetki ve Rol -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">Yetki ve Rol</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="role_id" class="form-label">Sistem Rolü *</label>
+                                    <select class="form-select" id="role_id" name="role_id" required>
+                                        <option value="">Seçiniz...</option>
+                                        {% if roles %}
+                                            {% for role in roles %}
+                                                <option value="{{ role.role_id }}" 
+                                                    {% if user.role_id == role.role_id %}selected{% endif %}>
+                                                    {{ role.name }}
+                                                </option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                    <div class="invalid-feedback">Sistem rolü seçimi zorunludur.</div>
+                                    <small class="form-text text-muted">Sistem düzeyindeki yetki rolü</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="device_role" class="form-label">Cihaz Yetki Seviyesi *</label>
+                                    <select class="form-select" id="device_role" name="device_role" required>
+                                        <option value="">Seçiniz...</option>
+                                        <option value="0" {% if user.device_role == 0 %}selected{% endif %}>Kullanıcı</option>
+                                        <option value="14" {% if user.device_role == 14 %}selected{% endif %}>Yönetici</option>
+                                        <option value="3" {% if user.device_role == 3 %}selected{% endif %}>Kayıt</option>
+                                    </select>
+                                    <div class="invalid-feedback">Cihaz yetki seviyesi seçimi zorunludur.</div>
+                                    <small class="form-text text-muted">Parmak izi cihazındaki yetki seviyesi</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="status" class="form-label">Durum</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="1" {% if user.status == 1 %}selected{% endif %}>Aktif</option>
+                                        <option value="0" {% if user.status == 0 %}selected{% endif %}>Pasif</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('users') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> İptal
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> Güncelle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Form validation
+        const forms = document.querySelectorAll(".needs-validation");
+        Array.from(forms).forEach((form) => {
+            form.addEventListener(
+                "submit",
+                (event) => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add("was-validated");
+                },
+                false
+            );
+        });
+
+        // Şifre göster/gizle fonksiyonu
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordInput = document.getElementById("password");
+
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener("click", function () {
+                const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+                passwordInput.setAttribute("type", type);
+
+                const icon = this.querySelector("i");
+                icon.classList.toggle("fa-eye");
+                icon.classList.toggle("fa-eye-slash");
+            });
+        }
+    });
+</script>
+{% endblock %} 

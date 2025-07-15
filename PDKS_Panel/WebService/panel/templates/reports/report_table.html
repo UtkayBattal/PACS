@@ -1,0 +1,57 @@
+{% if data %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        {%- for key in data[0].keys() %}
+        <th>{{ key }}</th>
+        {%- endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {%- for row in data %}
+      <tr>
+        {%- for key, value in row.items() %}
+        <td class="align-middle">
+          {%- if value is none or value == "" or value == "None" or value == "-"
+          -%}
+          <span class="text-muted">-</span>
+          {%- elif key == 'Durum' and value == 'Eksik Hareket' -%}
+          <span class="badge bg-danger">Eksik Hareket</span>
+          {%- elif key == 'Durum' and value == 'Geç Giriş' -%}
+          <span class="badge bg-warning text-dark">Geç Giriş</span>
+          {%- elif key == 'Durum' and value == 'Erken Çıkış' -%}
+          <span class="badge bg-info">Erken Çıkış</span>
+          {%- elif key == 'Durum' and value != 'Normal' -%}
+          <span class="badge bg-danger">{{ value }}</span>
+          {%- elif key == 'İşlem' and 'GİRİŞ' in value and 'Geç Giriş' in value
+          -%}
+          <span class="badge bg-success">GİRİŞ</span>
+          <span class="badge bg-warning text-dark ms-1">Geç Giriş</span>
+          {%- elif key == 'İşlem' and 'ÇIKIŞ' in value and 'Eksik Hareket' in
+          value -%}
+          <span class="badge bg-danger">ÇIKIŞ</span>
+          <span class="badge bg-danger ms-1">Eksik Hareket</span>
+          {%- elif key == 'İşlem' and 'ÇIKIŞ' in value and 'Erken Çıkış' in
+          value -%}
+          <span class="badge bg-danger">ÇIKIŞ</span>
+          <span class="badge bg-info ms-1">Erken Çıkış</span>
+          {%- elif key == 'İşlem' and value == 'GİRİŞ' -%}
+          <span class="badge bg-success">GİRİŞ</span>
+          {%- elif key == 'İşlem' and value == 'ÇIKIŞ' -%}
+          <span class="badge bg-danger">ÇIKIŞ</span>
+          {%- elif key == 'Açıklama' -%} {{ value|safe }} {%- else -%} {{ value
+          }} {%- endif -%}
+        </td>
+        {%- endfor %}
+      </tr>
+      {%- endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <i class="fas fa-info-circle me-2"></i>Seçilen kriterlere uygun rapor verisi
+  bulunamadı.
+</div>
+{% endif %}

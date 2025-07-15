@@ -1,0 +1,307 @@
+{% extends 'layout.html' %} {% block content %}
+<div
+  class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+>
+  <h1 class="h2">Parmak İzi Yönetimi</h1>
+</div>
+
+<!-- Flash Mesajları için Özel Alan -->
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div id="fingerprint-flash-messages" class="mb-4">
+  {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }} alert-dismissible fade show shadow-sm"
+    role="alert"
+  >
+    <div class="d-flex align-items-center">
+      <div class="flex-shrink-0 me-3">
+        <i
+          class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} fa-lg"
+        ></i>
+      </div>
+      <div class="flex-grow-1">
+        <strong>
+          {% if category == 'success' %}Başarılı!{% elif category == 'danger'
+          %}Hata!{% elif category == 'warning' %}Uyarı!{% else %}Bilgi{% endif
+          %}
+        </strong>
+        <div class="mt-1">{{ message|safe }}</div>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<div class="alert alert-info" id="api-info-alert">
+  <h4 class="alert-heading">
+    <i class="fas fa-info-circle"></i> Parmak İzi Yönetimi
+  </h4>
+  <p>
+    Bu sayfa, personelin parmak izlerini yönetmenizi sağlar. Parmak izi
+    işlemleri için cihaz bağlantısı gereklidir.
+  </p>
+  <hr />
+  <p class="mb-0">
+    İşlem yapmak için önce bir kullanıcı seçin ve ardından istediğiniz parmak
+    izi işlemini gerçekleştirin.
+  </p>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Kullanıcı Seçimi</h5>
+      </div>
+      <div class="card-body">
+        <form id="userSelectForm">
+          <div class="mb-3">
+            <label for="user_id" class="form-label">Kullanıcı</label>
+            <select
+              class="form-select"
+              id="user_id"
+              {%
+              if
+              not
+              device_connected
+              %}disabled{%
+              endif
+              %}
+            >
+              <option value="">Kullanıcı seçin...</option>
+              {% for user in users %}
+              <option value="{{ user.user_id }}">
+                {{ user.name }} (ID: {{ user.user_id }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-grid">
+            <button
+              type="button"
+              id="viewFingerprintsBtn"
+              class="btn btn-primary"
+              {%
+              if
+              not
+              device_connected
+              %}disabled{%
+              endif
+              %}
+            >
+              <i class="fas fa-search"></i> Parmak İzlerini Görüntüle
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Parmak İzi Ekle</h5>
+      </div>
+      <div class="card-body">
+        <form id="enrollFingerprintForm">
+          <div class="mb-3">
+            <label for="finger_index" class="form-label">Parmak Seçimi</label>
+            <select
+              class="form-select"
+              id="finger_index"
+              {%
+              if
+              not
+              device_connected
+              %}disabled{%
+              endif
+              %}
+            >
+              <option value="0">Sol Serçe Parmak</option>
+              <option value="1">Sol Yüzük Parmağı</option>
+              <option value="2">Sol Orta Parmak</option>
+              <option value="3">Sol İşaret Parmağı</option>
+              <option value="4">Sol Başparmak</option>
+              <option value="5">Sağ Başparmak</option>
+              <option value="6">Sağ İşaret Parmağı</option>
+              <option value="7">Sağ Orta Parmak</option>
+              <option value="8">Sağ Yüzük Parmağı</option>
+              <option value="9">Sağ Serçe Parmak</option>
+            </select>
+          </div>
+          <div class="d-grid">
+            <button
+              type="button"
+              id="enrollFingerprintBtn"
+              class="btn btn-success"
+              {%
+              if
+              not
+              device_connected
+              %}disabled{%
+              endif
+              %}
+            >
+              <i class="fas fa-fingerprint"></i> Parmak İzi Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Parmak İzi Listesi</h5>
+      </div>
+      <div class="card-body">
+        <div id="fingerprintListEmpty">
+          <p class="text-center text-muted">
+            Parmak izi verisi görüntülemek için önce bir kullanıcı seçin ve
+            "Parmak İzlerini Görüntüle" butonuna tıklayın.
+          </p>
+        </div>
+
+        <div id="fingerprintListLoading" class="d-none">
+          <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+          </div>
+          <p class="text-center mt-2">Parmak izi verisi yükleniyor...</p>
+        </div>
+
+        <div id="fingerprintListError" class="d-none">
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="fingerprintListErrorMsg">Hata oluştu</span>
+          </div>
+        </div>
+
+        <table class="table table-hover d-none" id="fingerprintTable">
+          <thead>
+            <tr>
+              <th>İndex</th>
+              <th>Parmak</th>
+              <th>Durum</th>
+              <th>Boyut</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="fingerprintTableBody">
+            <!-- Dinamik olarak doldurulacak -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Cihaz Durumu</h5>
+      </div>
+      <div class="card-body">
+        {% if device_connected %}
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i> Cihaza bağlantı kuruldu
+        </div>
+
+        <p id="deviceIpDisplay">Cihaz IP: {{ device_ip }}</p>
+
+        <button type="button" id="disconnectBtn" class="btn btn-outline-danger">
+          <i class="fas fa-plug"></i> Bağlantıyı Kes
+        </button>
+        {% else %}
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle"></i> Cihaza bağlantı kurulamadı
+        </div>
+
+        <p>
+          Parmak izi özelliklerini kullanmak için önce cihaza bağlanmanız
+          gerekmektedir.
+        </p>
+
+        <a href="{{ url_for('devices') }}" class="btn btn-primary">
+          <i class="fas fa-plug"></i> Cihaz Ayarlarına Git
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Parmak İzi Bölümü -->
+<div id="fingerprint-section" style="display: none">
+  <!-- Kullanıcı Bilgileri -->
+  <div id="fingerprint-user-info" class="alert alert-info mb-3"></div>
+
+  <!-- Yükleniyor -->
+  <div id="fingerprint-list-loading" class="d-none">
+    <div class="d-flex justify-content-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Yükleniyor...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boş Liste -->
+  <div id="fingerprint-list-empty" class="d-none"></div>
+
+  <!-- Hata -->
+  <div id="fingerprint-list-error" class="d-none">
+    <div class="alert alert-danger" id="fingerprint-list-error-msg"></div>
+  </div>
+
+  <!-- Parmak İzi Tablosu -->
+  <div class="table-responsive">
+    <table
+      id="fingerprint-table"
+      class="table table-bordered table-hover d-none"
+    >
+      <thead class="table-light">
+        <tr>
+          <th>Parmak No</th>
+          <th>Parmak Adı</th>
+          <th>Durum</th>
+          <th>Boyut</th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody id="fingerprint-table-body">
+        <!-- Dinamik olarak doldurulacak -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Hata Modalı -->
+<div class="modal fade" id="error-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Hata</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body" id="error-modal-content"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block additional_scripts %}
+<script src="{{ url_for('static', filename='js/fingerprints.js') }}"></script>
+{% endblock %}

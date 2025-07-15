@@ -1,0 +1,286 @@
+{% extends 'layout.html' %} {% block content %}
+<div
+  class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+>
+  <h1 class="h2">Gösterge Paneli</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group me-2">
+      <a
+        href="{{ url_for('records') }}"
+        class="btn btn-sm btn-outline-secondary"
+        >Tüm Kayıtlar</a
+      >
+      <a href="{{ url_for('users') }}" class="btn btn-sm btn-outline-secondary"
+        >Kullanıcılar</a
+      >
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card-counter primary">
+      <i class="fa fa-users"></i>
+      <span class="count-numbers">{{ user_count }}</span>
+      <span class="count-name">Toplam Personel</span>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card-counter success">
+      <i class="fa fa-calendar-check"></i>
+      <span class="count-numbers">{{ today_records }}</span>
+      <span class="count-name">Bugünkü Kayıt</span>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card-counter danger" id="active-users-widget">
+      <i class="fa fa-user-clock"></i>
+      <span class="count-numbers" id="active-users-count"
+        >{{ active_users }}</span
+      >
+      <span class="count-name">İçerideki Personel</span>
+      <small
+        class="text-white"
+        id="last-update-time"
+        style="position: absolute; bottom: 5px; right: 10px; font-size: 10px"
+      ></small>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card-counter info" id="device-status-widget">
+      <i class="fa fa-hdd"></i>
+      <span class="count-numbers"
+        >{{ connected_devices }}/{{ total_devices }}</span
+      >
+      <span class="count-name">Bağlı Cihazlar</span>
+      <a
+        href="{{ url_for('devices') }}"
+        class="stretched-link"
+        title="Cihaz yönetimine git"
+      ></a>
+    </div>
+  </div>
+</div>
+
+<h4 class="mb-3">Son Kayıtlar</h4>
+
+<div class="info-box info-box-primary mb-3">
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <h5 class="alert-heading mb-2">
+        <i class="fas fa-info-circle"></i> PDKS Yönetim Sistemi
+      </h5>
+      <p class="mb-2">
+        Personel devam kontrol sistemi ile çalışanlarınızın giriş-çıkış
+        kayıtlarını takip edin, raporlar alın ve cihazlarınızı yönetin.
+      </p>
+      <p class="mb-0">
+        <small class="text-muted">
+          <i class="fas fa-clock"></i> Sistem 7/24 aktif •
+          <i class="fas fa-shield-alt"></i> Güvenli veri saklama •
+          <i class="fas fa-chart-line"></i> Detaylı raporlama
+        </small>
+      </p>
+    </div>
+    <div class="col-md-4 text-end">
+      <div class="btn-group-vertical btn-group-sm" role="group">
+        <a
+          href="{{ url_for('users') }}"
+          class="btn btn-outline-primary btn-sm mb-1"
+        >
+          <i class="fas fa-users"></i> Personel Yönetimi
+        </a>
+        <a
+          href="{{ url_for('device_users') }}"
+          class="btn btn-outline-primary btn-sm mb-1"
+        >
+          <i class="fas fa-link"></i> Cihaz Atamaları
+        </a>
+        <a
+          href="{{ url_for('reports_page') }}"
+          class="btn btn-outline-primary btn-sm"
+        >
+          <i class="fas fa-chart-bar"></i> Raporlar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-sm">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Kullanıcı</th>
+        <th>Kart No</th>
+        <th>Tarih/Saat</th>
+        <th>Terminal</th>
+        <th>İşlem</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record, user, device in records %}
+      <tr>
+        <td>{{ record.id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.card_no if user.card_no else '-' }}</td>
+        <td>{{ record.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td>
+          {% if device and device.name %}
+          <span class="badge bg-secondary">{{ device.name }}</span>
+          {% else %}
+          <span class="badge bg-secondary">Belirsiz</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if record.status == 'Geç Giriş' %}
+          <span class="badge bg-warning text-dark"
+            >Giriş <i class="fas fa-exclamation-circle"></i
+          ></span>
+          <span class="badge bg-danger">Geç Giriş</span>
+          {% elif record.status == 'Eksik Hareket' %}
+          <span class="badge bg-warning text-dark"
+            >Çıkış <i class="fas fa-exclamation-circle"></i
+          ></span>
+          <span class="badge bg-danger">Eksik Hareket</span>
+          {% elif record.punch == 0 %}
+          <span class="badge bg-success">Giriş</span>
+          {% elif record.punch == 1 %}
+          <span class="badge bg-danger">Çıkış</span>
+          {% elif record.status == 'Manuel Giriş' or record.status == '5' %}
+          <span class="badge bg-warning">Manuel Giriş</span>
+          {% elif record.status == 'Manuel Çıkış' or record.status == '6' %}
+          <span class="badge bg-warning">Manuel Çıkış</span>
+          {% else %}
+          <span class="badge bg-secondary"
+            >{{ record.status if record.status else record.punch if record.punch
+            is not none else 'Bilinmiyor' }}</span
+          >
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center">Henüz kayıt bulunmuyor</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="text-end mt-3">
+  <a href="{{ url_for('records') }}" class="btn btn-primary">
+    <i class="fas fa-list"></i> Tüm Kayıtları Görüntüle
+  </a>
+</div>
+{% endblock %} {% block additional_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // İçerideki aktif kullanıcı sayısını alıp gösterge panelini güncelleyen fonksiyon
+    function updateActiveUsersCount() {
+      fetch("{{ url_for('reports.active_users_count') }}")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("API yanıt vermedi");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Sayıyı güncelle
+            const countElement = document.getElementById("active-users-count");
+            countElement.textContent = data.active_count;
+
+            // Son güncelleme zamanını göster
+            const lastUpdateElement =
+              document.getElementById("last-update-time");
+            lastUpdateElement.textContent = "Son güncelleme: " + data.timestamp;
+
+            // Widget animasyonu
+            const widget = document.getElementById("active-users-widget");
+            widget.classList.add("pulse");
+            setTimeout(() => {
+              widget.classList.remove("pulse");
+            }, 1000);
+          } else {
+            console.error("API hatası:", data.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Veri alınamadı:", error);
+          const countElement = document.getElementById("active-users-count");
+          countElement.textContent = "{{ active_users }}"; // Hata durumunda ilk değeri kullan
+        });
+    }
+
+    // Cihaz durumlarını güncelleyen fonksiyon
+    function updateDeviceStatus() {
+      fetch("/api/device-status")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("API yanıt vermedi");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Sayıyı güncelle
+            const deviceStatusElement = document.querySelector(
+              "#device-status-widget .count-numbers"
+            );
+            deviceStatusElement.textContent = `${data.connected_devices}/${data.total_devices}`;
+
+            // Widget animasyonu
+            const deviceWidget = document.getElementById(
+              "device-status-widget"
+            );
+            deviceWidget.classList.add("pulse");
+            setTimeout(() => {
+              deviceWidget.classList.remove("pulse");
+            }, 1000);
+          } else {
+            console.error("API hatası:", data.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Cihaz durumu alınamadı:", error);
+        });
+    }
+
+    // Sayfa yüklendiğinde ilk güncellemeyi yap
+    updateActiveUsersCount();
+    updateDeviceStatus();
+
+    // Her 10 saniyede bir güncelle
+    setInterval(updateActiveUsersCount, 10000);
+    setInterval(updateDeviceStatus, 15000); // Cihaz durumlarını 15 saniyede bir güncelle
+  });
+</script>
+
+<style>
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .pulse {
+    animation: pulse 1s;
+  }
+
+  .card-counter.info {
+    background-color: #4285f4;
+    color: #fff;
+  }
+</style>
+{% endblock %}

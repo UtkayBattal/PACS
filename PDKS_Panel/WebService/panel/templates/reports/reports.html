@@ -1,0 +1,764 @@
+{% extends "layout.html" %} 
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  .swal-custom-popup {
+    border-radius: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .swal-custom-button {
+    border-radius: 10px;
+    font-weight: 500;
+    padding: 10px 25px;
+  }
+</style>
+{% endblock %}
+
+{% block title %}Raporlar{% endblock %} {% block
+content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Raporlar</h1>
+  <div class="card mb-4">
+    <div class="card-header">
+      <i class="fas fa-file-alt me-1"></i>
+      Rapor Oluştur
+    </div>
+    <div class="card-body">
+      <form
+        id="reportForm"
+        method="POST"
+        action="{{ url_for('reports.generate') }}"
+      >
+        <!-- Temel Rapor Ayarları -->
+        <div class="row mb-4">
+          <div class="col-lg-6">
+            <label for="report_type" class="form-label">
+              <i class="fas fa-file-alt me-2"></i>Rapor Tipi
+            </label>
+            <select
+              class="form-select"
+              id="report_type"
+              name="report_type"
+              required
+            >
+              <option value="">Seçiniz...</option>
+              <option value="personnel_list">Personel Listesi Raporu</option>
+              <option value="detailed_attendance">
+                Dönemsel Ayrıntılı Giriş Çıkış Raporu
+              </option>
+              <option value="detailed_timesheet">
+                Dönemsel Ayrıntılı Puantaj Raporu
+              </option>
+              <option value="weekly_timesheet">
+                Ayrıntılı Haftalık Puantaj Raporu
+              </option>
+              <option value="daily_timesheet">Günlük Puantaj Raporu</option>
+            </select>
+          </div>
+          <div class="col-lg-6">
+            <label for="user_id" class="form-label">
+              <i class="fas fa-user me-2"></i>Personel
+            </label>
+            <select class="form-select" id="user_id" name="user_id">
+              <option value="">Tümü</option>
+              {% for employee in employees %}
+              <option value="{{ employee.user_id }}">
+                {{ employee.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Filtreleme Seçenekleri -->
+        <div class="row mb-4">
+          <div class="col-lg-4 mb-3">
+            <label for="departman" class="form-label">
+              <i class="fas fa-building me-2"></i>Departman
+            </label>
+            <select class="form-select" id="departman" name="departman">
+              <option value="">Tümü</option>
+              <option value="Hukuk İşleri Müdürlüğü">
+                Hukuk İşleri Müdürlüğü
+              </option>
+              <option value="Yazı İşleri Müdürlüğü">
+                Yazı İşleri Müdürlüğü
+              </option>
+              <option value="Kadın ve Aile Hizmetler Müdürlüğü">
+                Kadın ve Aile Hizmetler Müdürlüğü
+              </option>
+              <option value="Sosyal Destek Hizmetleri Müdürlüğü">
+                Sosyal Destek Hizmetleri Müdürlüğü
+              </option>
+              <option value="Zabıta Müdürlüğü">Zabıta Müdürlüğü</option>
+              <option value="Emlak İstimlak Müdürlüğü">
+                Emlak İstimlak Müdürlüğü
+              </option>
+              <option value="İnsan Kaynakları ve Eğitim Müdürlüğü">
+                İnsan Kaynakları ve Eğitim Müdürlüğü
+              </option>
+              <option value="Yapı Kontrol Müdürlüğü">
+                Yapı Kontrol Müdürlüğü
+              </option>
+              <option value="Bilgi İşlem Müdürlüğü">
+                Bilgi İşlem Müdürlüğü
+              </option>
+              <option value="İklim Değişikliği ve Sıfır Atık Müdürlüğü">
+                İklim Değişikliği ve Sıfır Atık Müdürlüğü
+              </option>
+              <option value="Makine İkmal Bakım ve Onarım Müdürlüğü">
+                Makine İkmal Bakım ve Onarım Müdürlüğü
+              </option>
+              <option value="Temizlik İşleri Müdürlüğü">
+                Temizlik İşleri Müdürlüğü
+              </option>
+              <option value="Destek Hizmet Müdürlüğü">
+                Destek Hizmet Müdürlüğü
+              </option>
+              <option value="İşletme ve İştirakler Müdürlüğü">
+                İşletme ve İştirakler Müdürlüğü
+              </option>
+              <option value="Mali Hizmetler Müdürlüğü">
+                Mali Hizmetler Müdürlüğü
+              </option>
+              <option value="Strateji Geliştirme Müdürlüğü">
+                Strateji Geliştirme Müdürlüğü
+              </option>
+              <option value="Basın ve Yayın Müdürlüğü">
+                Basın ve Yayın Müdürlüğü
+              </option>
+              <option value="Fen İşleri Müdürlüğü">Fen İşleri Müdürlüğü</option>
+              <option value="Park ve Bahçeler Müdürlüğü">
+                Park ve Bahçeler Müdürlüğü
+              </option>
+              <option value="Ruhsat ve Denetim Müdürlüğü">
+                Ruhsat ve Denetim Müdürlüğü
+              </option>
+              <option value="Halkla İlişkiler Müdürlüğü">
+                Halkla İlişkiler Müdürlüğü
+              </option>
+              <option value="Kırsal Hizmetler Müdürlüğü">
+                Kırsal Hizmetler Müdürlüğü
+              </option>
+              <option value="Muhtarlık İşleri Müdürlüğü">
+                Muhtarlık İşleri Müdürlüğü
+              </option>
+              <option value="İmar ve Şehircilik Müdürlüğü">
+                İmar ve Şehircilik Müdürlüğü
+              </option>
+              <option value="Kültür ve Sosyal İşler Müdürlüğü">
+                Kültür ve Sosyal İşler Müdürlüğü
+              </option>
+              <option value="Sivil Savunma Uzmanlığı">
+                Sivil Savunma Uzmanlığı
+              </option>
+              <option value="Spor İşleri Müdürlüğü">
+                Spor İşleri Müdürlüğü
+              </option>
+              <option value="Veteriner İşleri Müdürlüğü">
+                Veteriner İşleri Müdürlüğü
+              </option>
+              <option value="Teftiş Kurulu Müdürlüğü">
+                Teftiş Kurulu Müdürlüğü
+              </option>
+              <option value="Özel Kalem Müdürlüğü">Özel Kalem Müdürlüğü</option>
+            </select>
+          </div>
+          <div class="col-lg-4 mb-3">
+            <label for="meslek" class="form-label">
+              <i class="fas fa-briefcase me-2"></i>Meslek
+            </label>
+            <select class="form-select" id="meslek" name="meslek">
+              <option value="">Tümü</option>
+              <option value="Mühendis">Mühendis</option>
+              <option value="Tekniker">Tekniker</option>
+              <option value="Memur">Memur</option>
+              <option value="İşçi">İşçi</option>
+              <option value="Yönetici">Yönetici</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </div>
+          <div class="col-lg-4 mb-3">
+            <label for="egitim_durumu" class="form-label">
+              <i class="fas fa-graduation-cap me-2"></i>Eğitim Durumu
+            </label>
+            <select class="form-select" id="egitim_durumu" name="egitim_durumu">
+              <option value="">Tümü</option>
+              <option value="İlköğretim">İlköğretim</option>
+              <option value="Ortaokul">Ortaokul</option>
+              <option value="Lise">Lise</option>
+              <option value="Ön Lisans">Ön Lisans</option>
+              <option value="Lisans">Lisans</option>
+              <option value="Yüksek Lisans">Yüksek Lisans</option>
+              <option value="Doktora">Doktora</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Çalışma Bilgileri ve Tarih -->
+        <div class="row mb-4">
+          <div class="col-lg-3 mb-3">
+            <label for="calisma_tipi" class="form-label">
+              <i class="fas fa-clock me-2"></i>Çalışma Tipi
+            </label>
+            <select class="form-select" id="calisma_tipi" name="calisma_tipi">
+              <option value="">Tümü</option>
+              <option value="Tam Zamanlı">Tam Zamanlı</option>
+              <option value="Yarı Zamanlı">Yarı Zamanlı</option>
+            </select>
+          </div>
+          <div class="col-lg-3 mb-3">
+            <label for="calisma_durumu" class="form-label">
+              <i class="fas fa-id-badge me-2"></i>Çalışma Durumu
+            </label>
+            <select
+              class="form-select"
+              id="calisma_durumu"
+              name="calisma_durumu"
+            >
+              <option value="">Tümü</option>
+              <option value="Memur">Memur</option>
+              <option value="Sözleşmeli">Sözleşmeli</option>
+              <option value="Kadrolu İşçi">Kadrolu İşçi</option>
+              <option value="Geçici İşçi">Geçici İşçi</option>
+              <option value="Şirket Personeli">Şirket Personeli</option>
+              <option value="Geçici Süreli Personel">
+                Geçici Süreli Personel
+              </option>
+            </select>
+          </div>
+          <div class="col-lg-3 mb-3">
+            <label for="start_date" class="form-label">
+              <i class="fas fa-calendar-alt me-2"></i>Başlangıç Tarihi
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="start_date"
+              name="start_date"
+              required
+            />
+          </div>
+          <div class="col-lg-3 mb-3">
+            <label for="end_date" class="form-label">
+              <i class="fas fa-calendar-check me-2"></i>Bitiş Tarihi
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="end_date"
+              name="end_date"
+              required
+            />
+          </div>
+        </div>
+        <!-- Rapor Oluştur Butonu -->
+        <div class="row">
+          <div class="col-12">
+            <hr class="my-4" />
+            <div class="d-flex justify-content-center">
+              <button type="submit" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-file-download me-2"></i> Rapor Oluştur
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rapor Sonuçları -->
+  <div id="reportResults" class="card mb-4 d-none">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <i class="fas fa-table me-1"></i>
+        <span id="reportTitle">Rapor Sonuçları</span>
+      </div>
+      <div class="dropdown">
+        <button
+          class="btn btn-primary dropdown-toggle"
+          type="button"
+          id="downloadButton"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          <i class="fas fa-download me-1"></i> Raporu İndir
+        </button>
+        <ul
+          class="dropdown-menu dropdown-menu-end"
+          aria-labelledby="downloadButton"
+        >
+          <li>
+            <a class="dropdown-item" href="#" id="downloadExcel"
+              ><i class="fas fa-file-excel me-2"></i>Excel olarak indir</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="reportContent"></div>
+    </div>
+  </div>
+
+  <!-- İndirme butonları -->
+  <div id="downloadButtons" class="mt-3 mb-4" style="display: none">
+    <button
+      type="button"
+      class="btn btn-primary me-2"
+      onclick="downloadReport('pdf')"
+    >
+      <i class="fas fa-file-pdf"></i> PDF İndir
+    </button>
+    <button
+      type="button"
+      class="btn btn-success"
+      onclick="downloadReport('excel')"
+    >
+      <i class="fas fa-file-excel"></i> Excel İndir
+    </button>
+  </div>
+</div>
+
+
+
+{% block styles %}
+<style>
+  .card {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    border: none;
+    border-radius: 0.35rem;
+  }
+
+  .card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 1rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #4e73df;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .form-label i {
+    color: #858796;
+    font-size: 0.9rem;
+  }
+
+  .form-select,
+  .form-control {
+    border-radius: 0.5rem;
+    border: 2px solid #e3e6f0;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    height: auto;
+    transition: all 0.3s ease;
+    background-color: #fff;
+  }
+
+  .form-select:focus,
+  .form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.15);
+    outline: none;
+    background-color: #fff;
+  }
+
+  .form-select:hover,
+  .form-control:hover {
+    border-color: #bac8f3;
+  }
+
+  /* Form grup düzeni */
+  .row {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+
+  .row > [class*="col-"] {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+  }
+
+  .btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2653d4;
+  }
+
+  /* Buton stili */
+  .btn-lg {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.2rem 0.5rem rgba(78, 115, 223, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.4rem 1rem rgba(78, 115, 223, 0.4);
+  }
+
+  /* Card başlık stili */
+  .card-header {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    color: white;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+  }
+
+  .card-header i {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Responsive düzen */
+  @media (max-width: 992px) {
+    .row > [class*="col-lg-"] {
+      margin-bottom: 1rem;
+    }
+  }
+
+  #reportContent {
+    overflow-x: auto;
+  }
+
+  #reportContent table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+
+  #reportContent th {
+    background-color: #f8f9fc;
+    color: #4e73df;
+    font-weight: 500;
+    padding: 0.75rem;
+    border: 1px solid #e3e6f0;
+  }
+
+  #reportContent td {
+    padding: 0.75rem;
+    border: 1px solid #e3e6f0;
+  }
+
+  #reportContent tr:nth-child(even) {
+    background-color: #f8f9fc;
+  }
+
+  #reportContent tr:hover {
+    background-color: #eaecf4;
+  }
+
+  /* SweetAlert2 özel stilleri - diğer bölümlere taşındı */
+
+
+</style>
+{% endblock %} {% block additional_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+  $(document).ready(function () {
+    // SweetAlert2 Modal gösterme fonksiyonu
+    function showModal(type, title, message) {
+      let config = {
+        title: title,
+        html: `
+          <div class="text-center">
+            <i class="${getIconForType(type)} fa-3x mb-3"></i>
+            <p class="mb-2">${message}</p>
+          </div>
+        `,
+        icon: getSweetAlertIcon(type),
+        confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+        customClass: {
+          popup: 'swal-custom-popup',
+          confirmButton: 'swal-custom-button'
+        }
+      };
+
+      // Tip göre özel ayarlar
+      switch (type) {
+        case "error":
+          config.confirmButtonColor = '#dc3545';
+          config.html = `
+            <div class="text-center">
+              <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+              <p class="mb-2">${message}</p>
+              <small class="text-muted">Lütfen tekrar deneyiniz.</small>
+            </div>
+          `;
+          break;
+        case "success":
+          config.confirmButtonColor = '#28a745';
+          config.timer = 3000;
+          config.timerProgressBar = true;
+          config.html = `
+            <div class="text-center">
+              <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+              <h5 class="text-success mb-2">${title}</h5>
+              <p class="mb-2">${message}</p>
+            </div>
+          `;
+          break;
+        case "warning":
+          config.confirmButtonColor = '#ffc107';
+          config.html = `
+            <div class="text-center">
+              <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
+              <p class="mb-2">${message}</p>
+              <small class="text-muted">Lütfen dikkat ediniz.</small>
+            </div>
+          `;
+          break;
+        case "info":
+        default:
+          config.confirmButtonColor = '#17a2b8';
+          config.timer = 5000;
+          config.timerProgressBar = true;
+          config.html = `
+            <div class="text-center">
+              <i class="fas fa-info-circle fa-3x text-info mb-3"></i>
+              <p class="mb-2">${message}</p>
+            </div>
+          `;
+          break;
+      }
+
+      Swal.fire(config);
+    }
+
+    // Icon helper fonksiyonları
+    function getIconForType(type) {
+      switch (type) {
+        case "error": return "fas fa-exclamation-triangle text-danger";
+        case "success": return "fas fa-check-circle text-success";
+        case "warning": return "fas fa-exclamation-circle text-warning";
+        case "info": 
+        default: return "fas fa-info-circle text-info";
+      }
+    }
+
+    function getSweetAlertIcon(type) {
+      switch (type) {
+        case "error": return "error";
+        case "success": return "success";
+        case "warning": return "warning";
+        case "info": 
+        default: return "info";
+      }
+    }
+
+    // Varsayılan tarihleri ayarla
+    const today = new Date().toISOString().split("T")[0];
+    const monthAgo = new Date();
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    const monthAgoStr = monthAgo.toISOString().split("T")[0];
+
+    $("#start_date").val(monthAgoStr);
+    $("#end_date").val(today);
+
+    // End date'in start date'den önce olmamasını sağla
+    $("#start_date").on("change", function () {
+      const startDate = $(this).val();
+      $("#end_date").attr("min", startDate);
+
+      // Eğer end date start date'den küçükse, end date'i start date olarak ayarla
+      if ($("#end_date").val() < startDate) {
+        $("#end_date").val(startDate);
+      }
+    });
+
+    // Start date'in end date'den sonra olmamasını sağla
+    $("#end_date").on("change", function () {
+      const endDate = $(this).val();
+      $("#start_date").attr("max", endDate);
+
+      // Eğer start date end date'den büyükse, start date'i end date olarak ayarla
+      if ($("#start_date").val() > endDate) {
+        $("#start_date").val(endDate);
+      }
+    });
+
+    // Maksimum tarihi bugün olarak ayarla
+    $("#start_date, #end_date").attr("max", today);
+
+    // Form gönderimi
+    $("#reportForm").on("submit", function (e) {
+      e.preventDefault();
+
+      // Yükleniyor modal'ı göster
+      Swal.fire({
+        title: 'Rapor Oluşturuluyor...',
+        html: `
+          <div class="text-center">
+            <i class="fas fa-chart-bar fa-3x text-primary mb-3"></i>
+            <p class="mb-2">Veriler analiz ediliyor...</p>
+            <small class="text-muted">Lütfen bekleyiniz.</small>
+          </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'swal-custom-popup'
+        }
+      });
+
+      var formData = new FormData(this);
+
+      // Tarihleri kontrol et ve uygun formatta gönder
+      var startDate = $("#start_date").val();
+      var endDate = $("#end_date").val();
+
+      if (startDate && endDate) {
+        // Date input'tan gelen YYYY-MM-DD formatını koruyarak gönder
+        formData.set("start_date", startDate);
+        formData.set("end_date", endDate);
+      }
+
+      $.ajax({
+        url: "{{ url_for('reports.generate') }}",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          if (response.success) {
+            $("#reportTitle").text(response.title || "Rapor Sonuçları");
+            $("#reportContent").html(response.html);
+            $("#reportResults").removeClass("d-none");
+            window.reportData = response.data; // Rapor verisini sakla
+
+            // Scroll to results
+            $("html, body").animate(
+              {
+                scrollTop: $("#reportResults").offset().top - 20,
+              },
+              500
+            );
+
+            // Başarı mesajı göster
+            showModal(
+              "success",
+              "Rapor Hazır!",
+              `${response.title} başarıyla oluşturuldu. ${response.data.length} kayıt bulundu.`
+            );
+          } else {
+            showModal("error", "Rapor Hatası", response.message);
+          }
+        },
+        error: function (xhr, status, error) {
+          showModal("error", "Bağlantı Hatası", "Rapor oluşturulurken bir hata oluştu. Lütfen tekrar deneyiniz.");
+        },
+      });
+    });
+
+    // İndirme butonları
+    $("#downloadPdf").click(function (e) {
+      e.preventDefault();
+      downloadReport("pdf");
+    });
+
+    $("#downloadExcel").click(function (e) {
+      e.preventDefault();
+      downloadReport("excel");
+    });
+
+    function downloadReport(fileType) {
+      const reportData = window.reportData;
+      if (!reportData || reportData.length === 0) {
+        showModal("error", "İndirme Hatası", "İndirilecek rapor verisi bulunamadı! Önce rapor oluşturunuz.");
+        return;
+      }
+
+      // İndirme yükleniyor modal'ı
+      Swal.fire({
+        title: `${fileType.toUpperCase()} Hazırlanıyor...`,
+        html: `
+          <div class="text-center">
+            <i class="fas fa-download fa-3x text-primary mb-3"></i>
+            <p class="mb-2">Dosya oluşturuluyor...</p>
+            <small class="text-muted">Bu işlem birkaç saniye sürebilir.</small>
+          </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'swal-custom-popup'
+        }
+      });
+
+      const data = {
+        report_type: $("#report_type").val(),
+        file_type: fileType,
+        report_data: reportData,
+        start_date: $("#start_date").val(),
+        end_date: $("#end_date").val(),
+      };
+
+      fetch("{{ url_for('reports.download') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((err) => Promise.reject(err));
+          }
+          return response.blob();
+        })
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.style.display = "none";
+          a.href = url;
+          a.download = `rapor.${fileType === "pdf" ? "pdf" : "xlsx"}`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+
+          // İndirme başarı mesajı
+          Swal.fire({
+            title: 'İndirme Tamamlandı!',
+            html: `
+              <div class="text-center">
+                <i class="fas fa-file-${fileType === "pdf" ? "pdf" : "excel"} fa-3x text-success mb-3"></i>
+                <h5 class="text-success mb-2">Dosya Hazır!</h5>
+                <p class="mb-2">Rapor ${fileType.toUpperCase()} formatında başarıyla indirildi.</p>
+                <small class="text-muted">Dosyayı "İndirilenler" klasöründe bulabilirsiniz.</small>
+              </div>
+            `,
+            icon: 'success',
+            confirmButtonText: '<i class="fas fa-check me-1"></i> Tamam',
+            confirmButtonColor: '#28a745',
+            timer: 5000,
+            timerProgressBar: true,
+            customClass: {
+              popup: 'swal-custom-popup',
+              confirmButton: 'swal-custom-button'
+            }
+          });
+        })
+        .catch((error) => {
+          console.error("İndirme hatası:", error);
+          showModal(
+            "error",
+            "İndirme Hatası",
+            error.error || "Rapor indirilirken bir hata oluştu! Lütfen tekrar deneyiniz."
+          );
+        });
+    }
+  });
+</script>
+{% endblock %} {% endblock %}

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  listener:
+    build:
+      context: .
+      dockerfile: Dockerfile.listener
+    container_name: pdks-listener
+    env_file:
+      - .env
+    networks:
+      - pdks_network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  pdks_network:
+    external: true

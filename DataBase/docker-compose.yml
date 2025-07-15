@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  pdks_db:
+    container_name: pdks_database
+    build: .
+    environment:
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=dbpass123
+      - POSTGRES_DB=myapp_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pdks_network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d myapp_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    name: pdks_dbdata
+
+networks:
+  pdks_network:
+    name: pdks_network
+    driver: bridge

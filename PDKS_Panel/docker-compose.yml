@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: WebService/Dockerfile
+    container_name: pdks-web
+    ports:
+      - "5000:5000" # Host:Container port mapping
+    volumes:
+      - ./WebService:/app/WebService # Kaynak kodları container'a bağla
+    env_file:
+      - WebService/panel/.env
+    networks:
+      - pdks_network
+    restart: unless-stopped
+
+networks:
+  pdks_network:
+    name: pdks_network
+    external: true
