@@ -1,167 +1,167 @@
-# PACS - Personel Devam Kontrol Sistemi
+# PACS - Personnel Attendance Control System
 
-## 📋 Proje Hakkında
+## 📋 About the Project
 
-PACS (Personel Devam Kontrol Sistemi), ZKTeco parmak izi terminalleri ile entegre çalışan, Docker tabanlı bir personel devam kontrol ve izin takip sistemidir. Sistem, modern web teknolojileri kullanarak geliştirilmiş olup, mikroservis mimarisi ile tasarlanmıştır.
+PACS (Personnel Attendance Control System) is a Docker-based personnel attendance control and leave tracking system that works integrated with ZKTeco fingerprint terminals. The system is developed using modern web technologies and designed with microservice architecture.
 
-## 🏗️ Sistem Mimarisi
+## 🏗️ System Architecture
 
-Proje 3 ana bileşenden oluşmaktadır:
+The project consists of 3 main components:
 
-### 1. **DataBase** - Veritabanı Servisi
-- **Teknoloji**: PostgreSQL 14 + Python 3.9
-- **Görev**: Merkezi veritabanı yönetimi
-- **Özellikler**:
-  - SQLAlchemy ORM ile veri modelleme
-  - Alembic ile veritabanı migration yönetimi
-  - Otomatik tablo oluşturma ve varsayılan veri ekleme
+### 1. **DataBase** - Database Service
+- **Technology**: PostgreSQL 14 + Python 3.9
+- **Purpose**: Central database management
+- **Features**:
+  - Data modeling with SQLAlchemy ORM
+  - Database migration management with Alembic
+  - Automatic table creation and default data insertion
 
-### 2. **PDKS_Listener** - Terminal Dinleyici Servisi
-- **Teknoloji**: Python 3.9 + pyzk kütüphanesi
-- **Görev**: ZKTeco terminallerinden veri toplama
-- **Özellikler**:
-  - Gerçek zamanlı terminal bağlantısı
-  - Otomatik yoklama verisi senkronizasyonu
-  - Kullanıcı bilgileri otomatik aktarımı
-  - Bağlantı kopması durumunda otomatik yeniden bağlanma
-  - Gelişmiş hata yönetimi ve loglama
+### 2. **PDKS_Listener** - Terminal Listener Service
+- **Technology**: Python 3.9 + pyzk library
+- **Purpose**: Data collection from ZKTeco terminals
+- **Features**:
+  - Real-time terminal connection
+  - Automatic attendance data synchronization
+  - Automatic user information transfer
+  - Automatic reconnection in case of connection loss
+  - Advanced error handling and logging
 
-### 3. **PDKS_Panel** - Web Yönetim Paneli
-- **Teknoloji**: Flask + SQLAlchemy + Bootstrap
-- **Görev**: Web tabanlı yönetim arayüzü
-- **Özellikler**:
-  - Kullanıcı yönetimi ve kimlik doğrulama
-  - Terminal yönetimi ve konfigürasyonu
-  - Detaylı raporlama sistemi (PDF/Excel export)
-  - İzin talepleri yönetimi
-  - Gerçek zamanlı dashboard
+### 3. **PDKS_Panel** - Web Management Panel
+- **Technology**: Flask + SQLAlchemy + Bootstrap
+- **Purpose**: Web-based management interface
+- **Features**:
+  - User management and authentication
+  - Terminal management and configuration
+  - Detailed reporting system (PDF/Excel export)
+  - Leave request management
+  - Real-time dashboard
 
-## 🚀 Kurulum ve Çalıştırma
+## 🚀 Installation and Running
 
-### Gereksinimler
-- Docker ve Docker Compose
-- En az 4GB RAM
-- Ağ erişimi (terminaller için)
+### Requirements
+- Docker and Docker Compose
+- At least 4GB RAM
+- Network access (for terminals)
 
-### Hızlı Başlangıç
+### Quick Start
 
-1. **Projeyi klonlayın:**
+1. **Clone the project:**
 ```bash
 git clone <repository-url>
 cd PACS
 ```
 
-2. **Veritabanı servisini başlatın:**
+2. **Start the database service:**
 ```bash
 cd DataBase
 docker-compose up -d
 ```
 
-3. **Web panelini başlatın:**
+3. **Start the web panel:**
 ```bash
 cd ../PDKS_Panel
 docker-compose up -d
 ```
 
-4. **Terminal dinleyicisini başlatın:**
+4. **Start the terminal listener:**
 ```bash
 cd ../PDKS_Listener
-# .env dosyasını düzenleyin (terminal IP adreslerini ekleyin)
+# Edit the .env file (add terminal IP addresses)
 docker-compose up -d
 ```
 
-### Detaylı Kurulum
+### Detailed Installation
 
-#### 1. Veritabanı Kurulumu
+#### 1. Database Installation
 
 ```bash
 cd DataBase
-# Docker Compose ile PostgreSQL başlat
+# Start PostgreSQL with Docker Compose
 docker-compose up -d
 
-# Veritabanı durumunu kontrol et
+# Check database status
 docker logs pdks_database
 ```
 
-**Varsayılan Veritabanı Bilgileri:**
+**Default Database Information:**
 - Host: localhost:5433
 - Database: myapp_db
 - Username: dbuser
 - Password: dbpass123
 
-#### 2. Web Panel Kurulumu
+#### 2. Web Panel Installation
 
 ```bash
 cd PDKS_Panel
-# Environment dosyasını oluştur
+# Create environment file
 cp WebService/panel/.env.example WebService/panel/.env
 
-# Docker ile başlat
+# Start with Docker
 docker-compose up -d
 ```
 
-**Varsayılan Panel Erişimi:**
+**Default Panel Access:**
 - URL: http://localhost:5000
 - Admin Email: admin@admin.com
 - Admin Password: admin
 
-#### 3. Terminal Dinleyici Kurulumu
+#### 3. Terminal Listener Installation
 
 ```bash
 cd PDKS_Listener
-# Environment dosyasını oluştur
+# Create environment file
 cp .env.example .env
 
-# Terminal IP adreslerini .env dosyasına ekle
+# Add terminal IP addresses to .env file
 echo "DEVICE_IP=192.168.1.100" >> .env
 echo "DEVICE_PORT=4370" >> .env
 
-# Docker ile başlat
+# Start with Docker
 docker-compose up -d
 ```
 
-## 📊 Veritabanı Şeması
+## 📊 Database Schema
 
-### Ana Tablolar
+### Main Tables
 
-#### Users (Kullanıcılar)
-- `user_id`: Birincil anahtar
-- `name`: Ad soyad
-- `email`: E-posta adresi
-- `password`: Şifrelenmiş şifre
-- `role_id`: Rol referansı
-- `department_id`: Departman referansı
-- `card_no`: Kart numarası
-- `device_role`: Terminal yetki seviyesi
-- `status`: Aktif/Pasif durumu
+#### Users (Users)
+- `user_id`: Primary key
+- `name`: Full name
+- `email`: Email address
+- `password`: Encrypted password
+- `role_id`: Role reference
+- `department_id`: Department reference
+- `card_no`: Card number
+- `device_role`: Terminal privilege level
+- `status`: Active/Inactive status
 
-#### Devices (Terminaller)
-- `device_id`: Birincil anahtar
-- `name`: Terminal adı
-- `ip`: IP adresi
-- `port`: Port numarası
-- `location_id`: Konum referansı
-- `is_active`: Aktif durumu
-- `last_connection`: Son bağlantı zamanı
+#### Devices (Terminals)
+- `device_id`: Primary key
+- `name`: Terminal name
+- `ip`: IP address
+- `port`: Port number
+- `location_id`: Location reference
+- `is_active`: Active status
+- `last_connection`: Last connection time
 
-#### Records (Kayıtlar)
-- `id`: Birincil anahtar
-- `user_id`: Kullanıcı referansı
-- `device_id`: Terminal referansı
-- `timestamp`: Kayıt zamanı
-- `punch`: Giriş/Çıkış (0/1)
-- `status`: Durum bilgisi
+#### Records (Records)
+- `id`: Primary key
+- `user_id`: User reference
+- `device_id`: Terminal reference
+- `timestamp`: Record time
+- `punch`: Entry/Exit (0/1)
+- `status`: Status information
 
-#### LeaveRequests (İzin Talepleri)
-- `id`: Birincil anahtar
-- `user_id`: Talep eden kullanıcı
-- `start_date`: İzin başlangıç tarihi
-- `end_date`: İzin bitiş tarihi
-- `reason`: İzin sebebi
-- `status`: Talep durumu (bekleniyor/onaylandı/reddedildi)
-- `approved_by`: Onaylayan admin
+#### LeaveRequests (Leave Requests)
+- `id`: Primary key
+- `user_id`: Requesting user
+- `start_date`: Leave start date
+- `end_date`: Leave end date
+- `reason`: Leave reason
+- `status`: Request status (pending/approved/rejected)
+- `approved_by`: Approving admin
 
-## 🔧 Konfigürasyon
+## 🔧 Configuration
 
 ### Environment Variables
 
@@ -199,217 +199,217 @@ RECONNECT_INTERVAL=300
 CLEAR_ATTENDANCE=true
 ```
 
-## 📈 Özellikler
+## 📈 Features
 
-### 🎯 Temel Özellikler
-- **Gerçek Zamanlı Veri Toplama**: Terminal verilerinin anlık senkronizasyonu
-- **Çoklu Terminal Desteği**: Birden fazla terminali aynı anda yönetme
-- **Otomatik Kullanıcı Senkronizasyonu**: Terminal kullanıcılarının otomatik aktarımı
-- **Gelişmiş Hata Yönetimi**: Bağlantı kopması durumunda otomatik yeniden bağlanma
+### 🎯 Core Features
+- **Real-time Data Collection**: Instant synchronization of terminal data
+- **Multi-terminal Support**: Managing multiple terminals simultaneously
+- **Automatic User Synchronization**: Automatic transfer of terminal users
+- **Advanced Error Handling**: Automatic reconnection in case of connection loss
 
-### 📊 Raporlama Sistemi
-- **Personel Listesi**: Tüm personelin detaylı bilgileri
-- **Detaylı Giriş-Çıkış**: Zaman bazlı detaylı kayıtlar
-- **Puantaj Raporları**: Günlük, haftalık ve dönemsel puantaj
-- **Excel/PDF Export**: Raporları farklı formatlarda indirme
-- **Filtreleme**: Departman, tarih, kullanıcı bazlı filtreleme
+### 📊 Reporting System
+- **Personnel List**: Detailed information of all personnel
+- **Detailed Entry-Exit**: Time-based detailed records
+- **Timesheet Reports**: Daily, weekly and period-based timesheets
+- **Excel/PDF Export**: Download reports in different formats
+- **Filtering**: Department, date, user-based filtering
 
-### 👥 Kullanıcı Yönetimi
-- **Rol Tabanlı Yetkilendirme**: Admin, Supervisor, User rolleri
-- **Güvenli Kimlik Doğrulama**: PBKDF2 ile şifre hashleme
-- **Profil Yönetimi**: Kullanıcı bilgilerini güncelleme
-- **Departman Yönetimi**: Departman bazlı organizasyon
+### 👥 User Management
+- **Role-based Authorization**: Admin, Supervisor, User roles
+- **Secure Authentication**: Password hashing with PBKDF2
+- **Profile Management**: Update user information
+- **Department Management**: Department-based organization
 
-### 📅 İzin Yönetimi
-- **İzin Talepleri**: Personel izin talebi oluşturma
-- **Onay Süreci**: Admin onayı ile izin yönetimi
-- **İzin Takibi**: Kullanılan ve kalan izin günleri
-- **Otomatik Hesaplama**: İzin gün sayısı otomatik hesaplama
+### 📅 Leave Management
+- **Leave Requests**: Personnel leave request creation
+- **Approval Process**: Leave management with admin approval
+- **Leave Tracking**: Used and remaining leave days
+- **Automatic Calculation**: Automatic calculation of leave days
 
-### 🔧 Terminal Yönetimi
-- **Terminal Konfigürasyonu**: IP, port ve ayar yönetimi
-- **Bağlantı Durumu**: Gerçek zamanlı terminal durumu
-- **Kullanıcı Aktarımı**: Terminal kullanıcılarını sisteme aktarma
-- **Parmak İzi Yönetimi**: Parmak izi kayıt ve silme işlemleri
+### 🔧 Terminal Management
+- **Terminal Configuration**: IP, port and setting management
+- **Connection Status**: Real-time terminal status
+- **User Transfer**: Transfer terminal users to system
+- **Fingerprint Management**: Fingerprint registration and deletion operations
 
 ## 🛠️ API Endpoints
 
-### Kimlik Doğrulama
-- `POST /login` - Kullanıcı girişi
-- `POST /logout` - Kullanıcı çıkışı
-- `GET /profile` - Kullanıcı profili
+### Authentication
+- `POST /login` - User login
+- `POST /logout` - User logout
+- `GET /profile` - User profile
 
-### Terminal Yönetimi
-- `GET /devices` - Terminal listesi
-- `POST /devices` - Yeni terminal ekleme
-- `PUT /devices/<id>` - Terminal güncelleme
-- `DELETE /devices/<id>` - Terminal silme
+### Terminal Management
+- `GET /devices` - Terminal list
+- `POST /devices` - Add new terminal
+- `PUT /devices/<id>` - Update terminal
+- `DELETE /devices/<id>` - Delete terminal
 
-### Raporlama
-- `POST /reports/generate` - Rapor oluşturma
-- `POST /reports/download` - Rapor indirme
-- `GET /reports/api/active-users-count` - Aktif kullanıcı sayısı
+### Reporting
+- `POST /reports/generate` - Generate report
+- `POST /reports/download` - Download report
+- `GET /reports/api/active-users-count` - Active user count
 
-### İzin Yönetimi
-- `GET /leave-requests/employee` - Personel izin paneli
-- `POST /leave-requests/employee/create` - İzin talebi oluşturma
-- `GET /leave-requests/admin` - Admin izin paneli
-- `POST /leave-requests/admin/approve/<id>` - İzin onaylama
-- `POST /leave-requests/admin/reject/<id>` - İzin reddetme
+### Leave Management
+- `GET /leave-requests/employee` - Employee leave panel
+- `POST /leave-requests/employee/create` - Create leave request
+- `GET /leave-requests/admin` - Admin leave panel
+- `POST /leave-requests/admin/approve/<id>` - Approve leave
+- `POST /leave-requests/admin/reject/<id>` - Reject leave
 
-## 🔒 Güvenlik
+## 🔒 Security
 
-### Kimlik Doğrulama
-- PBKDF2 ile şifre hashleme
-- Session tabanlı kimlik doğrulama
-- Rol bazlı erişim kontrolü
+### Authentication
+- Password hashing with PBKDF2
+- Session-based authentication
+- Role-based access control
 
-### Veri Güvenliği
-- SQL Injection koruması (SQLAlchemy ORM)
-- XSS koruması (Flask-WTF)
-- CSRF koruması
-- Güvenli veritabanı bağlantıları
+### Data Security
+- SQL Injection protection (SQLAlchemy ORM)
+- XSS protection (Flask-WTF)
+- CSRF protection
+- Secure database connections
 
-### Ağ Güvenliği
-- Docker network izolasyonu
-- Port yönetimi
-- Environment variable ile hassas bilgi koruması
+### Network Security
+- Docker network isolation
+- Port management
+- Sensitive information protection with environment variables
 
-## 📝 Loglama
+## 📝 Logging
 
-### Log Seviyeleri
-- **INFO**: Genel bilgi mesajları
-- **WARNING**: Uyarı mesajları
-- **ERROR**: Hata mesajları
-- **CRITICAL**: Kritik hata mesajları
-- **SUCCESS**: Başarılı işlem mesajları
+### Log Levels
+- **INFO**: General information messages
+- **WARNING**: Warning messages
+- **ERROR**: Error messages
+- **CRITICAL**: Critical error messages
+- **SUCCESS**: Successful operation messages
 
-### Log Dosyaları
-- `pdks_listener.log`: Terminal dinleyici logları
-- `pdks_web.log`: Web panel logları
-- `pdks_database.log`: Veritabanı logları
+### Log Files
+- `pdks_listener.log`: Terminal listener logs
+- `pdks_web.log`: Web panel logs
+- `pdks_database.log`: Database logs
 
-## 🐛 Sorun Giderme
+## 🐛 Troubleshooting
 
-### Yaygın Sorunlar
+### Common Issues
 
-#### Terminal Bağlantı Sorunları
+#### Terminal Connection Issues
 ```bash
-# Terminal IP'sini kontrol et
+# Check terminal IP
 ping 192.168.1.100
 
-# Port erişilebilirliğini kontrol et
+# Check port accessibility
 telnet 192.168.1.100 4370
 
-# Docker loglarını kontrol et
+# Check Docker logs
 docker logs pdks-listener
 ```
 
-#### Veritabanı Bağlantı Sorunları
+#### Database Connection Issues
 ```bash
-# Veritabanı container durumunu kontrol et
+# Check database container status
 docker ps | grep pdks_database
 
-# Veritabanı loglarını kontrol et
+# Check database logs
 docker logs pdks_database
 
-# Bağlantıyı test et
+# Test connection
 docker exec -it pdks_database psql -U dbuser -d myapp_db
 ```
 
-#### Web Panel Erişim Sorunları
+#### Web Panel Access Issues
 ```bash
-# Container durumunu kontrol et
+# Check container status
 docker ps | grep pdks-web
 
-# Port erişilebilirliğini kontrol et
+# Check port accessibility
 curl http://localhost:5000
 
-# Logları kontrol et
+# Check logs
 docker logs pdks-web
 ```
 
-### Performans Optimizasyonu
+### Performance Optimization
 
-#### Veritabanı Optimizasyonu
-- İndekslerin doğru tanımlandığından emin olun
-- Büyük veri setleri için sayfalama kullanın
-- Gereksiz sorguları optimize edin
+#### Database Optimization
+- Ensure indexes are properly defined
+- Use pagination for large datasets
+- Optimize unnecessary queries
 
-#### Terminal Bağlantı Optimizasyonu
-- `CHECK_INTERVAL` değerini ayarlayın
-- `RECONNECT_INTERVAL` değerini optimize edin
-- Batch işlemler için `batch_size` ayarlayın
+#### Terminal Connection Optimization
+- Adjust `CHECK_INTERVAL` value
+- Optimize `RECONNECT_INTERVAL` value
+- Set `batch_size` for batch operations
 
-## 🔄 Güncelleme ve Bakım
+## 🔄 Updates and Maintenance
 
-### Veritabanı Migration
+### Database Migration
 ```bash
 cd DataBase
-# Yeni migration oluştur
+# Create new migration
 alembic revision --autogenerate -m "migration_description"
 
-# Migration'ı uygula
+# Apply migration
 alembic upgrade head
 ```
 
-### Container Güncelleme
+### Container Updates
 ```bash
-# Tüm servisleri güncelle
+# Update all services
 docker-compose pull
 docker-compose up -d
 
-# Eski image'ları temizle
+# Clean old images
 docker image prune -f
 ```
 
-### Yedekleme
+### Backup
 ```bash
-# Veritabanı yedeği
+# Database backup
 docker exec pdks_database pg_dump -U dbuser myapp_db > backup.sql
 
-# Container yedeği
+# Container backup
 docker save pdks_database > pdks_database.tar
 ```
 
-## 📞 Destek ve Katkıda Bulunma
+## 📞 Support and Contributing
 
-### Geliştirici Bilgileri
-- **Proje**: PACS - Personel Devam Kontrol Sistemi
-- **Teknoloji**: Python, Flask, PostgreSQL, Docker
-- **Mimari**: Mikroservis
+### Developer Information
+- **Project**: PACS - Personnel Attendance Control System
+- **Technology**: Python, Flask, PostgreSQL, Docker
+- **Architecture**: Microservice
 
-### Katkıda Bulunma
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`)
-3. Commit yapın (`git commit -m 'Add some AmazingFeature'`)
-4. Push yapın (`git push origin feature/AmazingFeature`)
-5. Pull Request oluşturun
+### Contributing
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Lisans
-Bu proje MIT lisansı altında lisanslanmıştır.
+### License
+This project is licensed under the MIT License.
 
-## 📚 Ek Kaynaklar
+## 📚 Additional Resources
 
-### Dokümantasyon
-- [Flask Dokümantasyonu](https://flask.palletsprojects.com/)
-- [SQLAlchemy Dokümantasyonu](https://docs.sqlalchemy.org/)
-- [Docker Dokümantasyonu](https://docs.docker.com/)
-- [ZKTeco Terminal Dokümantasyonu](https://www.zkteco.com/)
+### Documentation
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Docker Documentation](https://docs.docker.com/)
+- [ZKTeco Terminal Documentation](https://www.zkteco.com/)
 
-### Faydalı Komutlar
+### Useful Commands
 ```bash
-# Tüm servisleri başlat
+# Start all services
 docker-compose -f DataBase/docker-compose.yml up -d
 docker-compose -f PDKS_Panel/docker-compose.yml up -d
 docker-compose -f PDKS_Listener/docker-compose.yml up -d
 
-# Servisleri durdur
+# Stop services
 docker-compose -f DataBase/docker-compose.yml down
 docker-compose -f PDKS_Panel/docker-compose.yml down
 docker-compose -f PDKS_Listener/docker-compose.yml down
 
-# Logları takip et
+# Follow logs
 docker logs -f pdks-listener
 docker logs -f pdks-web
 docker logs -f pdks_database
@@ -417,4 +417,4 @@ docker logs -f pdks_database
 
 ---
 
-**Not**: Bu sistem ZKTeco parmak izi terminalleri ile test edilmiştir. Farklı terminal markaları için ek konfigürasyon gerekebilir.
+**Note**: This system has been tested with ZKTeco fingerprint terminals. Additional configuration may be required for different terminal brands.
